@@ -9,6 +9,7 @@ var UserSchema = new Schema({
   'salt': {type: String, required: true},
   'created': {type: Date, default: Date.now}
 });
+var Users = mongoose.model('Users', usersSchema);
 
 UserSchema.virtual('password')
     .set(function(password) {
