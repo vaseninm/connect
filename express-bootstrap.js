@@ -1,6 +1,6 @@
-var express = require('express');
-var HttpError = require('middleware/sendHttpError').HttpError;
-var mongoose = require('mongoose');
+var express = require('express'),
+  mongoose = require('mongoose'),
+  log = require('lib/log')(module);
 
 module.exports = function(app, config){
 
@@ -10,26 +10,24 @@ module.exports = function(app, config){
     app.use(express.logger('default'));
   }
   
-  mongoose.connect(config.get('mongoose:uri'), config.get('mongoose:options'));
-
   app.use(express.bodyParser());
-  app.use(app.router)
+  app.use(express.cookieParser());
+
+  var MongoStore = require('connect-mongo')(express);
+
+  app.use(express.session({
+      secret: config.get('session:secret'),
+      key: config.get('session:key'),
+      cookie: config.get('session:cookie'),
+      store: new MongoStore({mongoose_connection: mongoose.connection})
+  }));
+
+  app.use(require('middleware/loadUser'));
+
+  app.use(app.router);
 
   //error handler
   app.use(function(err, req, res, next){
-    if (typeof err == 'number') { 
-      err = new HttpError(err);
-    }
-    if (err instanceof HttpError) {
-      res.sendHttpError(err);
-    } else {
-      if (app.get('env') == 'development') {
-        express.errorHandler()(err, req, res, next);
-      } else {
-        log.error(err);
-        err = new HttpError(500);
-        res.sendHttpError(err);
-      }
-    }
+    express.errorHandler()(err, req, res, next);
   });
 }

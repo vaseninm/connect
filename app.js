@@ -1,7 +1,18 @@
-var express = require('express');
-var http = require('http');
-var config = require('config');
-var log = require('lib/log')(module);
+var express = require('express'),
+  config = require('config'),
+  http = require('http'),
+  fs = require('fs'),
+  mongoose = require('mongoose'),
+  log = require('lib/log')(module);
+
+//db connection
+mongoose.connect(config.get('mongoose:uri'), config.get('mongoose:options'));
+
+//bootstrap models
+var models_path = __dirname + '/models';
+fs.readdirSync(models_path).forEach(function (file) {
+  if (~file.indexOf('.js')) require(models_path + '/' + file);
+});
 
 var app = express();
 

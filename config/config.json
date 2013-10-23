@@ -3,5 +3,14 @@
   "mongoose": {
     "uri": "mongodb://localhost/test",
     "options": {}
+  },
+  "session": {
+      "secret": "secretKey007",
+      "key": "sid",
+      "cookie": {
+          "path": "/",
+          "httpOnly": true,
+          "maxAge": null
+      }
   }
 }

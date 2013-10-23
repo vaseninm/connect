@@ -2,12 +2,14 @@
 var users = require('controllers/users');
 
 module.exports = function(app){
-  app.get('/', users.login);
- /* app.use(function(req, res, next){*/
-//    if (req.is('*/json')){
- /*     
-    } else {
-      next();
-    }
-  });*/
+  app.get('/', function(req, res){
+    res.send(req.user);
+  });
+
+  app.post('/login', users.login);
+
+  app.post('/logout', users.logout);
+
+  app.post('/register', users.register);
+
 }
