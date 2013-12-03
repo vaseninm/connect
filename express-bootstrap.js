@@ -30,7 +30,7 @@ module.exports = function (app, config) {
   app.use(passport.session());
 
   passport.use(new LocalStrategy(
-      function (username, password, done) {
+      function (username, password, done){
         User.findOne({name: username}, function (err, user) {
           if (err) {
             return done(err);

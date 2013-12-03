@@ -4,37 +4,14 @@ var mongoose = require('mongoose'),
   async = require('async'),
   passport = require('passport');
 
-exports.login = function(req, res) {
-    passport.authenticate('local', { successRedirect: '/',
-        failureRedirect: '/login' });
-}
-
-  /*
-  async.waterfall([
-    function(callback){
-        User.findOne({name:name}, callback);
-    },
-    function(user, callback){
-        if (user){
-           if (user.checkPassword(password)){
-             callback(null, user);
-           } else {
-              next(new Error("incorrect name or password"));
-           }
-        } else {
-            next(new Error("user not found"));
-        }
-    }
-  ], function(err, user){
-    if (err) return next(err);
-    req.session.user = user._id;
-    res.send({});
-  });
-  */
+exports.login = passport.authenticate('local', {
+  successRedirect: '/',
+  failureRedirect: '/login' }
+);
 
 exports.logout = function(req, res){
   req.logout();
-  res.redirect('/');
+  res.redirect('/login');
 };
 
 exports.register = function(req, res, next){

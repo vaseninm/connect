@@ -5,12 +5,14 @@ var users = require('controllers/users'),
 module.exports = function(app){
 
   app.get('/', function(req, res){
-    res.send('hello');
+    if (!req.user){
+      res.redirect('login');
+    }
+    res.send(req.user);
   });
 
-
   app.get('/login', function(req, res){
-    res.send(':(');
+    res.send('authorization form');
   });
 
   app.post('/login', users.login);
