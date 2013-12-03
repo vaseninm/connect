@@ -9,7 +9,6 @@ var UserSchema = new Schema({
   'salt': {type: String, required: true},
   'created': {type: Date, default: Date.now}
 });
-var Users = mongoose.model('Users', usersSchema);
 
 UserSchema.virtual('password')
     .set(function(password) {
@@ -17,7 +16,7 @@ UserSchema.virtual('password')
         this.salt = Math.random() + '';
         this.hashedPassword = this.encryptPassword(password);
     })
-    .get(function() { return this._plainPassword; });
+    .get(function() { return this._plainPassword;});
 
 UserSchema.methods = {
     encryptPassword: function (password) {
