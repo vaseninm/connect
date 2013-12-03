@@ -7,6 +7,7 @@
   "session": {
       "secret": "secretKey007",
       "key": "sid",
+      "db": "sessions",
       "cookie": {
           "path": "/",
           "httpOnly": true,

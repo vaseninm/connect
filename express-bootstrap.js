@@ -23,7 +23,7 @@ module.exports = function (app, config) {
     secret: config.get('session:secret'),
     key: config.get('session:key'),
     cookie: config.get('session:cookie'),
-    store: new MongoStore({db: 'session'})
+    store: new MongoStore({db: config.get('session:db')})
   }));
 
   app.use(passport.initialize());
