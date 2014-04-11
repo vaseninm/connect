@@ -6,6 +6,7 @@ $(function(){
     var WebSocket = window.WebSocket || window.MozWebSocket;
     navigator.getUserMedia = navigator.getUserMedia || navigator.mozGetUserMedia || navigator.webkitGetUserMedia;
     var connection = new WebSocket('ws://127.0.0.1:1337');
+    var localKey = null;
 
     console.log('Страница загружена');
 
@@ -28,19 +29,29 @@ $(function(){
                 return;
             }
 
-            var description = json.newClient.description;
+            console.log(json);
 
-            if (description.type === 'offer') {
-                pc.setRemoteDescription(new SessionDescription(description));
-                offer('createAnswer');
+            if (json.newClient) {
+                if (json.newClient.key === localKey) return;
+
+                var description = json.newClient.description;
+
+                if (description.type === 'offer') {
+                    pc.setRemoteDescription(new SessionDescription(description));
+                    offer('createAnswer');
+                }
+                else if (description.type === 'answer') {
+                    pc.setRemoteDescription(new SessionDescription(description));
+                }
+                else if (description.type === 'candidate') {
+                    var candidate = new IceCandidate({sdpMLineIndex: message.label, candidate: message.candidate});
+                    pc.addIceCandidate(candidate);
+                }
+            } else if(json.key) {
+                localKey = json.key;
+                console.log(localKey);
             }
-            else if (description.type === 'answer') {
-                pc.setRemoteDescription(new SessionDescription(description));
-            }
-            else if (description.type === 'candidate') {
-                var candidate = new IceCandidate({sdpMLineIndex: message.label, candidate: message.candidate});
-                pc.addIceCandidate(candidate);
-            }
+
         };
     }
 
@@ -84,7 +95,8 @@ $(function(){
         pc[type](
             function(description) {
                 console.log('Офер отправлен ['+type+'].');
-                connection.send(JSON.stringify(description));
+                if (type === 'createOffer')
+                    connection.send(JSON.stringify(description));
             },
             function(error) { console.log(error) },
             { 'mandatory': { 'OfferToReceiveAudio': true, 'OfferToReceiveVideo': true } }

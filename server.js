@@ -20,6 +20,11 @@ wsServer.on('request', function(request) {
 
     console.log('Подключен клиент ['+ request.key +'].');
 
+    connection.send(JSON.stringify({
+        error: 0,
+        key: request.key
+    }));
+
     connection.on('message', function(message) {
         if (message.type !== 'utf8') {
             console.warn('Message [' + message + '] not valid.');
