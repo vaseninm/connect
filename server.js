@@ -22,7 +22,9 @@ wsServer.on('request', function(request) {
 
     connection.send(JSON.stringify({
         error: 0,
-        key: request.key
+        type: 'connect',
+        key: request.key,
+        list: clients
     }));
 
     connection.on('message', function(message) {
@@ -31,36 +33,52 @@ wsServer.on('request', function(request) {
             return;
         }
 
-        if (clients.length >= 10) {
-            this.send(JSON.stringify({
-                error: 1
+        message = JSON.parse(message.utf8Data);
+
+        if (message.type === 'new') {
+            if (clients.length >= 10) {
+                this.send(JSON.stringify({
+                    error: 1
+                }));
+                return;
+            }
+
+            var client = {
+                description: message.description,
+                key: request.key
+            };
+
+            clients.push(client);
+
+            wsServer.broadcast(JSON.stringify({
+                error: 0,
+                type: 'new',
+                client: client
             }));
-            return;
+
+            console.log(clients.length);
+        } else if (message.action === 'get') {
+            this.send(JSON.stringify({
+                error: 0,
+                type: 'list',
+                list: clients
+            }));
         }
-
-        var client = {
-            description: JSON.parse(message.utf8Data),
-            key: request.key
-        };
-
-        clients.push(client);
-
-        wsServer.broadcast(JSON.stringify({
-            error: 0,
-            newClient: client
-        }));
-
-        console.log(clients.length);
     });
 
     connection.on('close', function() {
-        for (i in clients) {
+        for (var i in clients) {
             if (clients[i].key == request.key) {
+                wsServer.broadcast(JSON.stringify({
+                    error: 0,
+                    type: 'leave',
+                    client: clients[i]
+                }));
+
                 clients.splice(i, 1);
             }
         }
-        console.log('Отключен клиент [' + request.key + '].');
-        console.log(clients.length);
 
+        console.log('Отключен клиент [' + request.key + '].');
     });
 });

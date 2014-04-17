@@ -29,12 +29,10 @@ $(function(){
                 return;
             }
 
-            console.log(json);
+            if (json.type === 'new') {
+                if (json.client.key === localKey) return;
 
-            if (json.newClient) {
-                if (json.newClient.key === localKey) return;
-
-                var description = json.newClient.description;
+                var description = json.client.description;
 
                 if (description.type === 'offer') {
                     pc.setRemoteDescription(new SessionDescription(description));
@@ -47,9 +45,23 @@ $(function(){
                     var candidate = new IceCandidate({sdpMLineIndex: message.label, candidate: message.candidate});
                     pc.addIceCandidate(candidate);
                 }
-            } else if(json.key) {
+            } else if(json.type === 'connect') {
                 localKey = json.key;
-                console.log(localKey);
+                for (var i in json.list) {
+                    if (json.list[i].description.type === 'offer') {
+                        pc.setRemoteDescription(new SessionDescription(json.list[i].description));
+                        offer('createAnswer');
+                    }
+                    else if (json.list[i].description.type === 'answer') {
+                        pc.setRemoteDescription(new SessionDescription(json.list[i].description));
+                    }
+                    else if (json.list[i].description.type === 'candidate') {
+                        var candidate = new IceCandidate({sdpMLineIndex: message.label, candidate: message.candidate});
+                        pc.addIceCandidate(candidate);
+                    }
+                }
+            } else if(json.type === 'leave'){
+
             }
 
         };
@@ -81,6 +93,7 @@ $(function(){
                 }
             };
             pc.onaddstream = function(remoteStream){
+                console.log(remoteStream);
                 $('#user').clone().append(getVideoElement(remoteStream.stream)).show().appendTo('#users');
             };
 
@@ -96,7 +109,10 @@ $(function(){
             function(description) {
                 console.log('Офер отправлен ['+type+'].');
                 if (type === 'createOffer')
-                    connection.send(JSON.stringify(description));
+                    connection.send(JSON.stringify({
+                        type: 'new',
+                        description: description
+                    }));
             },
             function(error) { console.log(error) },
             { 'mandatory': { 'OfferToReceiveAudio': true, 'OfferToReceiveVideo': true } }
