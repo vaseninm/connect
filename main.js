@@ -7,6 +7,7 @@ $(function(){
     navigator.getUserMedia = navigator.getUserMedia || navigator.mozGetUserMedia || navigator.webkitGetUserMedia;
     var connection = new WebSocket('ws://127.0.0.1:1337');
     var localKey = null;
+    var clients = [];
 
     console.log('Страница загружена');
 
@@ -34,6 +35,8 @@ $(function(){
 
                 var description = json.client.description;
 
+                clients.push(json.client);
+
                 if (description.type === 'offer') {
                     pc.setRemoteDescription(new SessionDescription(description));
                     offer('createAnswer');
@@ -42,26 +45,20 @@ $(function(){
                     pc.setRemoteDescription(new SessionDescription(description));
                 }
                 else if (description.type === 'candidate') {
-                    var candidate = new IceCandidate({sdpMLineIndex: message.label, candidate: message.candidate});
+                    var candidate = new IceCandidate({sdpMLineIndex: description.label, candidate: description.candidate});
                     pc.addIceCandidate(candidate);
                 }
             } else if(json.type === 'connect') {
                 localKey = json.key;
-                for (var i in json.list) {
-                    if (json.list[i].description.type === 'offer') {
-                        pc.setRemoteDescription(new SessionDescription(json.list[i].description));
-                        offer('createAnswer');
-                    }
-                    else if (json.list[i].description.type === 'answer') {
-                        pc.setRemoteDescription(new SessionDescription(json.list[i].description));
-                    }
-                    else if (json.list[i].description.type === 'candidate') {
-                        var candidate = new IceCandidate({sdpMLineIndex: message.label, candidate: message.candidate});
-                        pc.addIceCandidate(candidate);
+                clients = json.list;
+            } else if(json.type === 'leave'){
+                $('#key'+json.client.key).remove();
+                for (var i in clients) {
+                    if (clients[i].key == json.client.key) {
+                        clients.splice(i, 1);
                     }
                 }
-            } else if(json.type === 'leave'){
-
+                clients.splice();
             }
 
         };
@@ -93,11 +90,31 @@ $(function(){
                 }
             };
             pc.onaddstream = function(remoteStream){
-                console.log(remoteStream);
-                $('#user').clone().append(getVideoElement(remoteStream.stream)).show().appendTo('#users');
+                var key = null;
+                for(i in clients) {
+                    if (clients[i].description.sdp == remoteStream.target.remoteDescription.sdp) {
+                        key = clients[i].key;
+                        break;
+                    }
+                }
+                $('#user').clone().append(getVideoElement(remoteStream.stream)).attr('id', 'key'+key).show().appendTo('#users');
             };
 
             offer('createOffer');
+
+            for (var i in clients) {
+                if (clients[i].description.type === 'offer') {
+                    pc.setRemoteDescription(new SessionDescription(clients[i].description));
+                    offer('createAnswer');
+                }
+                else if (clients[i].description.type === 'answer') {
+                    pc.setRemoteDescription(new SessionDescription(clients[i].description));
+                }
+                else if (clients[i].description.type === 'candidate') {
+                    var candidate = new IceCandidate({sdpMLineIndex: clients[i].description.label, candidate: clients[i].description.candidate});
+                    pc.addIceCandidate(candidate);
+                }
+            }
         }, function(error) {
             console.log(error);
         });
