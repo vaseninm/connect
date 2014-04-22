@@ -5,7 +5,7 @@ $(function(){
     var SessionDescription = window.mozRTCSessionDescription || window.RTCSessionDescription;
     var WebSocket = window.WebSocket || window.MozWebSocket;
     navigator.getUserMedia = navigator.getUserMedia || navigator.mozGetUserMedia || navigator.webkitGetUserMedia;
-    var connection = new WebSocket('ws://127.0.0.1:1337');
+    var connection = new WebSocket('ws://' + location.hostname + ':1337');
     var localKey = null;
     var clients = [];
 
