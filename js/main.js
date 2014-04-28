@@ -124,7 +124,7 @@ var updateList = function(list){
 }
 
 var addVideoElement = function (stream, key) {
-  var el = $('<video/>', {id:key, autoplay:true, muted:true}).appendTo('body')[0];
+  var el = $('<video/>', {id:key, autoplay:true}).appendTo('body')[0];
   el.src = URL.createObjectURL(stream);
 
   return el;
@@ -140,16 +140,18 @@ $(function(){
     console.log('Страница загружена');
     //создаем окно
     (function () {
-    var contraints = {
-        audio: true,
-        video: {
-          mandatory: {
-           minWidth: 640,
-           maxWidth: 960,
-           minHeight: 480,
-           maxHeight: 720,
-           minFrameRate: 20
-          }
+    var constraints = {
+        "audio": true,
+        "video": {
+          "mandatory": {
+
+           "minWidth": 640,
+           "maxWidth": 960,
+           "minHeight": 480,
+           "maxHeight": 720,
+           "minFrameRate": 20
+          },
+          "optional": []
         }
       };
 
@@ -190,7 +192,7 @@ $(function(){
           username: '28224511:1379330808'
         }
       ];
-      getUserMedia(contraints, function(stream) {
+      getUserMedia(constraints, function(stream) {
 
             console.log('Видео разрешено');
             addVideoElement(stream, 'local');
