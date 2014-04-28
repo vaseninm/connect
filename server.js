@@ -26,6 +26,11 @@ wsServer.on('request', function(request) {
 var requestAcceptedHandler = function(connection){
   var request = this;
 
+  //compare for sending message
+  var compareSend = function(message){
+    return JSON.stringify({from:request.key, message:message})
+  }
+
   var messageHandler = function(message){
 
     if (message.type !== 'utf8') {
@@ -34,24 +39,20 @@ var requestAcceptedHandler = function(connection){
     }
     message = JSON.parse(message.utf8Data);
 
-    var other = clients.findOne(request.key);
-    console.log(clients.list());
-    console.log('exclude '+request.key);
+    var other = clients.findOne({exclude:request.key});
     if (typeof other === 'undefined'){
       console.log('you once');
       return;
     }
 
-    console.log('my key: '+request.key+'\n'+' other key: '+other.key);
-
     if (message.type === 'offer') {
-       other.connection.send(JSON.stringify(message));
+       other.connection.send(compareSend(message));
        console.log('send offer');
     } else if (message.type === 'answer'){
-       other.connection.send(JSON.stringify(message));
+       other.connection.send(compareSend(message));
        console.log('send answer');
     } else if (message.type === 'candidate'){
-       other.connection.send(JSON.stringify(message));
+       other.connection.send(compareSend(message));
        console.log('send candidate');
     }
   }
@@ -59,21 +60,22 @@ var requestAcceptedHandler = function(connection){
   var closeHandler = function(){
 
     clients.remove(request.key);
-    console.log('delete: '+request.key);
 
-//    var other = clients.list(request.key, true);
-//    if (!other){
-//      console.log('you once');
-//      return;
-//    }
+    var others = clients.list();
+    if (others.length == 0){
+      console.log('you once');
+      return;
+    }
 
-//    console.log('my key: '+request.key+'\n'+' other key: '+other.key);
     //send all
-//    other.connection.send(JSON.stringify({
-//        error: 0,
-//        type: 'leave',
-//        key: request.key
-//    }));
+    for (var key in others){
+      var other = clients.findOne({key:others[key]});
+      console.log('others: ', others);
+      other.connection.send(compareSend({
+        error: 0,
+        type: 'leave'
+      }));
+    }
   }
 
   connection.on('message', messageHandler);
@@ -84,17 +86,21 @@ var requestAcceptedHandler = function(connection){
       connection:connection
   });
 
-//  var other = clients.list(request.key, true);
-//  if (!other){
-//
-//  }
-//  console.log('my key: '+request.key+'\n'+' other key: '+other.key);
+  connection.send(compareSend({
+    error: 0,
+    type: 'list',
+    list: clients.list({exclude:request.key})
+  }));
 
-//  other.connection.send(JSON.stringify({
-//      error: 0,
-//      type: 'add',
-//      key: request.key
-//   }));
+  var other = clients.findOne({exclude: request.key});
+  if (!other){
+    console.log('you once');
+  } else {
+    other.connection.send(compareSend({
+        error: 0,
+        type: 'add'})
+    );
+  }
 }
 
 

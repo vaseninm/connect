@@ -15,30 +15,52 @@ function clients(){
     console.log('remove client: '+key);
   }
 
-  var findOne = function(exclude){
+  var findOne = function(condition){
     var keys = Object.keys(_clients);
-    if (exclude){
-      keys.splice(keys.indexOf(exclude), 1);
+
+    if (typeof condition !== 'undefined'){
+      if (typeof condition.exclude !== 'undefined'){
+        keys.splice(keys.indexOf(condition.exclude), 1);
+      } if (typeof condition.key !== 'undefined'){
+        console.log('condition key:', condition.key);
+        keys = [condition.key];
+      }
     }
+
     if (keys.length === 0){
       return undefined;
     } else {
       return _clients[keys[0]];
     }
+
   }
 
-  var list = function(){
-    return Object.keys(_clients);
-  }
+  //возвращает массив с доступными пользовтелями
+  var list = function(condition){
+    var keys = Object.keys(_clients);
 
-  var length = function(){
-    return Object.keys(_clients).length;
+      if (typeof condition !== 'undefined'){
+           if (typeof condition.exclude !== 'undefined'){
+        keys.splice(keys.indexOf(condition.exclude), 1);
+      }
+      if (typeof condition.attribute !== 'undefined'){
+        var key = Object.keys(condition.attribute)[0];
+        var value = condition.attribute[key];
+        keys = [];
+        for (var k in _clients){
+          if (_clients[k].hasOwnProperty(key) && _clients[k][key] === value){
+            keys.push(k);
+          }
+        }
+      }
+    }
+
+    return keys;
   }
 
   return {
     add: add,
     remove: remove,
-    length: length,
     list: list,
     findOne: findOne
   }

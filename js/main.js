@@ -1,3 +1,5 @@
+'use strict';
+
   $(function(){
 
     $('button').click(function(e){
@@ -5,12 +7,25 @@
       return;
     });
 
+    var updateList = function(list){
+
+      $('#users').empty();
+      if (list.length > 0 ){
+        $('button').show();
+      } else {
+        $('button').hide();
+      }
+      for (var i in list) {
+        $('<div/>', {text: list[i]}).appendTo('#users');
+      }
+    }
+
     console.log('Страница загружена');
 
     var pc = null;
     var WebSocket = window.WebSocket || window.MozWebSocket;
 
-//    var clients = window.clients();
+    window.clients = window.clients();
 
     var connection = new WebSocket('ws://' + location.hostname + ':8080');
 
@@ -23,40 +38,66 @@
 
     connection.onmessage = function (message) {
         try {
-            var data = JSON.parse(message.data);
-            console.log(data);
+            var m = JSON.parse(message.data);
+            console.log('message:', m);
+            var data = m.message;
+            var from = m.from;
+
         } catch (e) {
             console.log('This doesn\'t look like a valid JSON: ', message.data);
             return;
         }
 
-            if (data.type === 'offer') {
-                console.log('offer complete');
-                pc.setRemoteDescription(new RTCSessionDescription(data));
-                pc.createAnswer(gotLocalDescription, errorHandler, { 'mandatory': { 'OfferToReceiveAudio': true, 'OfferToReceiveVideo': true } });//create answer
-            } else if (data.type === 'answer') {
-                console.log('answer complete');
-                pc.setRemoteDescription(new RTCSessionDescription(data));
-            } else if (data.type === 'candidate') {
-                console.log('candidate complete');
-                var candidate = new RTCIceCandidate(data);
-                pc.addIceCandidate(candidate);
+        if (data.type === 'offer') {
+
+            console.log('offer complete');
+            pc.setRemoteDescription(new RTCSessionDescription(data));
+            var client = clients.findOne({key:from});
+            client.sdp = data.sdp;//add sdp
+            pc.createAnswer(gotLocalDescription, errorHandler, { 'mandatory': { 'OfferToReceiveAudio': true, 'OfferToReceiveVideo': true } });//create answer
+
+        } else if (data.type === 'answer') {
+
+            console.log('answer complete');
+            pc.setRemoteDescription(new RTCSessionDescription(data));
+            var client = clients.findOne({key:from});//add sdp
+            client.sdp = data.sdp
+
+        } else if (data.type === 'candidate') {
+
+            console.log('candidate complete');
+            var candidate = new RTCIceCandidate(data);
+            pc.addIceCandidate(candidate);
+
+        } else if (data.type === 'list'){
+
+            for (var i in data.list){
+              clients.add({key:data.list[i]});
             }
-//            else if (data.type === 'add'){
-//                clients.add({key:data.key});
-//                $('button').show();
-//            } else if (data.type === 'leave'){
-//                clients.remove(data.key);
-//            }
+            updateList(clients.list());
+
+        } else if (data.type === 'add'){
+
+            clients.add({key:from});
+            updateList(clients.list());
+
+        } else if (data.type === 'leave'){
+            var client = clients.findOne({key:from});
+            if (typeof client.html != 'undefined'){
+              $(client.html).remove();
+            }
+            clients.remove(from);
+            updateList(clients.list());
+        }
     };
 
     var errorHandler = function(error){
       console.log(error);
     }
 
-    var addVideoElement = function (stream, id) {
+    var addVideoElement = function (stream, key) {
 
-      var el = $('<video/>', {id:id, autoplay:true, muted:true}).appendTo('body')[0];
+      var el = $('<video/>', {id:key, autoplay:true, muted:true}).appendTo('body')[0];
       el.src = URL.createObjectURL(stream);
 
       return el;
@@ -117,14 +158,9 @@
     }
 
     var gotRemoteStream = function(remoteStream){
-//        var key = null;
-//        for(i in clients) {
-//            if (clients[i].description.sdp == remoteStream.target.remoteDescription.sdp) {
-//                key = clients[i].key;
-//                break;
-//            }
-//        }
-        addVideoElement(remoteStream.stream, 'user-' + 1)
+        var keys = clients.list({attribute:{sdp:remoteStream.target.remoteDescription.sdp}});
+        var client = clients.findOne({key:keys[0]});
+        client.html = addVideoElement(remoteStream.stream, keys[0]);
     };
 
     var gotIceCandidate = function(event) {
