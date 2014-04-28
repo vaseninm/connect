@@ -1,42 +1,29 @@
 'use strict';
 
-  $(function(){
+var pc = null;
+var WebSocket = window.WebSocket || window.MozWebSocket;
+var connection = null;
 
-    $('button').click(function(e){
-      pc.createOffer(gotLocalDescription, errorHandler, { 'mandatory': { 'OfferToReceiveAudio': true, 'OfferToReceiveVideo': true } });//create offer
-      return;
-    });
+var errorHandler = function(error){
+  console.log(error);
+}
 
-    var updateList = function(list){
+var init = function(){
+  connection = new WebSocket('ws://' + location.hostname + ':8080');
+  clients = window.clients();
 
-      $('#users').empty();
-      if (list.length > 0 ){
-        $('button').show();
-      } else {
-        $('button').hide();
-      }
-      for (var i in list) {
-        $('<div/>', {text: list[i]}).appendTo('#users');
-      }
-    }
+  connectionHandlers();
+}
 
-    console.log('Страница загружена');
+var connectionHandlers = function(){
 
-    var pc = null;
-    var WebSocket = window.WebSocket || window.MozWebSocket;
-
-    window.clients = window.clients();
-
-    var connection = new WebSocket('ws://' + location.hostname + ':8080');
-
-    connection.onopen = function () {
+  connection.onopen = function () {
         console.log('Сокет соединение открыто');
-        getLocalVideo();
     };
 
-    connection.onerror = errorHandler;
+  connection.onerror = errorHandler;
 
-    connection.onmessage = function (message) {
+  connection.onmessage = function (message) {
         try {
             var m = JSON.parse(message.data);
             console.log('message:', m);
@@ -52,6 +39,7 @@
 
             console.log('offer complete');
             pc.setRemoteDescription(new RTCSessionDescription(data));
+
             var client = clients.findOne({key:from});
             client.sdp = data.sdp;//add sdp
             pc.createAnswer(gotLocalDescription, errorHandler, { 'mandatory': { 'OfferToReceiveAudio': true, 'OfferToReceiveVideo': true } });//create answer
@@ -90,23 +78,70 @@
             updateList(clients.list());
         }
     };
+}
 
-    var errorHandler = function(error){
-      console.log(error);
+var gotLocalDescription = function(description){
+  pc.setLocalDescription(description);
+  if (description.type == 'offer'){
+    console.log('send offer');
+  } else {
+    console.log('send answer');
+  }
+  connection.send(JSON.stringify(description));
+}
+
+var gotRemoteStream = function(remoteStream){
+  var keys = clients.list({attribute:{sdp:remoteStream.target.remoteDescription.sdp}});
+  var client = clients.findOne({key:keys[0]});
+  client.html = addVideoElement(remoteStream.stream, keys[0]);
+};
+
+var gotIceCandidate = function(event) {
+    if (event.candidate) {
+      console.log('getting ice candidate');
+      //send signal server
+      var data = {
+        type: 'candidate',
+        label: event.candidate.sdpMLineIndex,
+        id: event.candidate.sdpMid,
+        candidate: event.candidate.candidate
+      };
+      connection.send(JSON.stringify(data));
     }
+};
 
-    var addVideoElement = function (stream, key) {
+var updateList = function(list){
 
-      var el = $('<video/>', {id:key, autoplay:true, muted:true}).appendTo('body')[0];
-      el.src = URL.createObjectURL(stream);
+  $('#users').empty();
+  if (list.length > 0 ){
+    $('button').show();
+  } else {
+    $('button').hide();
+  }
+  for (var i in list) {
+    $('<div/>', {text: list[i]}).appendTo('#users');
+  }
+}
 
-      return el;
-    }
+var addVideoElement = function (stream, key) {
+  var el = $('<video/>', {id:key, autoplay:true, muted:true}).appendTo('body')[0];
+  el.src = URL.createObjectURL(stream);
 
-    //создаем окно и оптравляем offer
-    var getLocalVideo = function () {
+  return el;
+}
 
-      var contraints = {
+$(function(){
+
+    $('button').click(function(e){
+      pc.createOffer(gotLocalDescription, errorHandler, { 'mandatory': { 'OfferToReceiveAudio': true, 'OfferToReceiveVideo': true } });//create offer
+      return;
+  });
+
+    console.log('Страница загружена');
+    //создаем окно
+    (function () {
+    var contraints = {
+        audio: true,
         video: {
           mandatory: {
            minWidth: 640,
@@ -115,67 +150,59 @@
            maxHeight: 720,
            minFrameRate: 20
           }
-        },
-        audio: true
+        }
       };
+
+      var servers = {}
+      servers.iceServers = [
+        {url:'stun:stun.l.google.com:19302'},
+        {url:'stun:stun1.l.google.com:19302'},
+        {url:'stun:stun2.l.google.com:19302'},
+        {url:'stun:stun3.l.google.com:19302'},
+        {url:'stun:stun4.l.google.com:19302'},
+        {url:'stun:stun01.sipphone.com'},
+        {url:'stun:stun.ekiga.net'},
+        {url:'stun:stun.fwdnet.net'},
+        {url:'stun:stun.ideasip.com'},
+        {url:'stun:stun.iptel.org'},
+        {url:'stun:stun.rixtelecom.se'},
+        {url:'stun:stun.schlund.de'},
+        {url:'stun:stunserver.org'},
+        {url:'stun:stun.softjoys.com'},
+        {url:'stun:stun.voiparound.com'},
+        {url:'stun:stun.voipbuster.com'},
+        {url:'stun:stun.voipstunt.com'},
+        {url:'stun:stun.voxgratia.org'},
+        {url:'stun:stun.xten.com'},
+        {
+          url: 'turn:numb.viagenie.ca',
+          credential: 'muazkh',
+          username: 'webrtc@live.com'
+        },
+        {
+          url: 'turn:192.158.29.39:3478?transport=udp',
+          credential: 'JZEOEt2V3Qb0y27GRntt2u2PAYA=',
+          username: '28224511:1379330808'
+        },
+        {
+          url: 'turn:192.158.29.39:3478?transport=tcp',
+          credential: 'JZEOEt2V3Qb0y27GRntt2u2PAYA=',
+          username: '28224511:1379330808'
+        }
+      ];
       getUserMedia(contraints, function(stream) {
 
             console.log('Видео разрешено');
             addVideoElement(stream, 'local');
 
-            pc = new RTCPeerConnection(null);
+            pc = new RTCPeerConnection(servers);
             pc.addStream(stream);
             pc.onicecandidate = gotIceCandidate;
-            pc.onaddstream = gotRemoteStream; 
+            pc.onaddstream = gotRemoteStream;
 
-/*
+            init();
 
-            for (var i in clients) {
-                if (clients[i].description.type === 'offer') {
-                    pc.setRemoteDescription(new RTCSessionDescription(clients[i].description));
-                    offer('createAnswer');
-                }
-                else if (clients[i].description.type === 'answer') {
-                    pc.setRemoteDescription(new RTCSessionDescription(clients[i].description));
-                }
-                else if (clients[i].description.type === 'candidate') {
-                    var candidate = new RTCIceCandidate({sdpMLineIndex: clients[i].description.label, candidate: clients[i].description.candidate});
-                    pc.addIceCandidate(candidate);
-                }
-            } 
-*/
         }, errorHandler);
-    };
+    })();
 
-    var gotLocalDescription = function(description){
-      pc.setLocalDescription(description); 
-      if (description.type == 'offer'){
-        console.log('send offer');
-      } else {
-        console.log('send answer');
-      }
-      connection.send(JSON.stringify(description));
-    }
-
-    var gotRemoteStream = function(remoteStream){
-        var keys = clients.list({attribute:{sdp:remoteStream.target.remoteDescription.sdp}});
-        var client = clients.findOne({key:keys[0]});
-        client.html = addVideoElement(remoteStream.stream, keys[0]);
-    };
-
-    var gotIceCandidate = function(event) {
-        console.log(event);
-        if (event.candidate) {
-            console.log('getting ice candidate');
-            //send signal server
-            var data = {
-               type: 'candidate',
-               label: event.candidate.sdpMLineIndex,
-               id: event.candidate.sdpMid,
-               candidate: event.candidate.candidate
-            };
-            connection.send(JSON.stringify(data));
-        }
-    };
-
-  });
+});

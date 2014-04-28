@@ -86,7 +86,6 @@ var requestAcceptedHandler = function(connection){
     type: 'list',
     list: clients.list({exclude:request.key})
   }));
-
   var others = clients.list({exclude: request.key});
   var other = (others.length)?clients.findOne({key:others[0]}):undefined;
   if (other){
