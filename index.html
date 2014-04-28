@@ -3,18 +3,19 @@
 <head>
 	<title>Тест WebRTC</title>
 	<meta charset="utf-8">
-	<script language="JavaScript" src="http://code.jquery.com/jquery-2.1.0.min.js"></script>
-	<script language="JavaScript" src="./main.js"></script>
+	<script language="JavaScript" src="//code.jquery.com/jquery-2.1.0.min.js"></script>
+    <script language="JavaScript" src="./js/adapter.js"></script>
+	<script language="JavaScript" src="./js/websocket.js"></script>
+    <script language="JavaScript" src="./clients.js"></script>
+	<script language="JavaScript" src="./js/main.js"></script>
 </head>
 <body>
 	<h1>Тест WebRTC</h1>
+    <button>Подключиться</button>
 	<div id="content">
-		<div class="video" id="local"></div>
-		<div class="video" id="user" style="display: none;"></div>
 		<div id="users">
 
 		</div>
 	</div>
-	<div id="call" style="display: none"><a href="#">Подключиться</a></div>
 </body>
 </html>
