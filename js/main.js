@@ -124,7 +124,7 @@ var updateList = function(list){
 }
 
 var addVideoElement = function (stream, key) {
-  var el = $('<video/>', {id:key, autoplay:true}).appendTo('body')[0];
+  var el = $('<video/>', {id:key, autoplay:true, controls:true}).appendTo('body')[0];
   el.src = URL.createObjectURL(stream);
 
   return el;
