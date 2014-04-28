@@ -39,21 +39,20 @@ var requestAcceptedHandler = function(connection){
     }
     message = JSON.parse(message.utf8Data);
 
-    var other = clients.findOne({exclude:request.key});
-    if (typeof other === 'undefined'){
-      console.log('you once');
-      return;
-    }
+    var others = clients.list({exclude:request.key});
+    var other = (others.length)?clients.findOne({key:others[0]}):undefined;
 
-    if (message.type === 'offer') {
-       other.connection.send(compareSend(message));
-       console.log('send offer');
-    } else if (message.type === 'answer'){
-       other.connection.send(compareSend(message));
-       console.log('send answer');
-    } else if (message.type === 'candidate'){
-       other.connection.send(compareSend(message));
-       console.log('send candidate');
+    if (typeof other !== 'undefined'){
+      if (message.type === 'offer') {
+         other.connection.send(compareSend(message));
+         console.log('send offer');
+      } else if (message.type === 'answer'){
+         other.connection.send(compareSend(message));
+         console.log('send answer');
+      } else if (message.type === 'candidate'){
+         other.connection.send(compareSend(message));
+         console.log('send candidate');
+      }
     }
   }
 
@@ -62,19 +61,15 @@ var requestAcceptedHandler = function(connection){
     clients.remove(request.key);
 
     var others = clients.list();
-    if (others.length == 0){
-      console.log('you once');
-      return;
-    }
-
-    //send all
-    for (var key in others){
-      var other = clients.findOne({key:others[key]});
-      console.log('others: ', others);
-      other.connection.send(compareSend({
-        error: 0,
-        type: 'leave'
-      }));
+    if (others.length != 0){
+      //send all
+      for (var key in others){
+        var other = clients.findOne({key:others[key]});
+        other.connection.send(compareSend({
+          error: 0,
+          type: 'leave'
+        }));
+      }
     }
   }
 
@@ -92,10 +87,9 @@ var requestAcceptedHandler = function(connection){
     list: clients.list({exclude:request.key})
   }));
 
-  var other = clients.findOne({exclude: request.key});
-  if (!other){
-    console.log('you once');
-  } else {
+  var others = clients.list({exclude: request.key});
+  var other = (others.length)?clients.findOne({key:others[0]}):undefined;
+  if (other){
     other.connection.send(compareSend({
         error: 0,
         type: 'add'})

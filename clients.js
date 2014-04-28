@@ -13,16 +13,14 @@ function clients(){
   var remove = function(key){
     delete _clients[key];
     console.log('remove client: '+key);
+    console.log('clients: ', Object.keys(_clients));
   }
 
   var findOne = function(condition){
     var keys = Object.keys(_clients);
 
     if (typeof condition !== 'undefined'){
-      if (typeof condition.exclude !== 'undefined'){
-        keys.splice(keys.indexOf(condition.exclude), 1);
-      } if (typeof condition.key !== 'undefined'){
-        console.log('condition key:', condition.key);
+      if (typeof condition.key !== 'undefined'){
         keys = [condition.key];
       }
     }
