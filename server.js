@@ -46,20 +46,18 @@ var messageHandler = function(message){
 }
 
 var closeHandler = function(){
+  var request = this;
 
   clients.remove(this.key);
 
-  var others = clients.list();
-  if (others.length != 0){
-    //send all
-    for (var key in others){
-      var other = clients.findOne({key:others[key]});
-      other.connection.send(prepareSend({
-        error: 0,
-        type: 'leave'
-      }, this));
-    }
-  }
+  //send all
+  clients.list().forEach(function(e){
+    var other = clients.findOne({key:e});
+    other.connection.send(prepareSend({
+      error: 0,
+      type: 'leave'
+    }, request));
+  });
 }
 
 //compare for sending message
@@ -70,7 +68,7 @@ var prepareSend = function(message, request){
 var requestAcceptedHandler = function(connection){
   var request = this;
 
-  connection.on('message', function(message){ messageHandler.call(request, message)});
+  connection.on('message', function(message){messageHandler.call(request, message)});
   connection.on('close', function(){closeHandler.call(request)});
 
   clients.add({
