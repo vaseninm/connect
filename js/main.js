@@ -73,57 +73,57 @@ var init = function(){
   clientsHandler();
 }
 
+var gotLocalDescription = function(description){
+
+  description.to = this;
+  var client = clients.findOne({key:description.to});
+  client.pc.setLocalDescription(description);
+  if (description.type == 'offer'){
+    console.log('send offer to '+description.to);
+  } else {
+    console.log('send answer to'+description.to);
+  }
+  connection.send(JSON.stringify(description));
+}
+
+var gotIceCandidate = function(event) {
+  if (event.candidate) {
+    console.log('getting ice candidate');
+    //send signal server
+    var data = {
+      to: this,
+      type: 'candidate',
+      label: event.candidate.sdpMLineIndex,
+      id: event.candidate.sdpMid,
+      candidate: event.candidate.candidate
+    };
+    connection.send(JSON.stringify(data));
+  }
+}
+
+var createPeerConnection = function(stream, key){
+
+  var pc = new RTCPeerConnection(servers);
+  pc.addStream(stream);
+  pc.onicecandidate = function(event){gotIceCandidate.call(key, event);}
+  pc.onaddstream = gotRemoteStream;
+
+  var client = clients.findOne({key:key});
+  client.pc = pc;
+
+  return pc;
+}
+
 var connectionHandlers = function(){
 
   connection.onopen = function () {
-        console.log('Сокет соединение открыто');
-    };
+      console.log('Сокет соединение открыто');
+  };
 
   connection.onerror = errorHandler;
 
   connection.onmessage = function (message) {
     //functions
-        var createPeerConnection = function(stream, key){
-
-          var pc = new RTCPeerConnection(servers);
-          pc.addStream(stream);
-          pc.onicecandidate = function(event){gotIceCandidate.call(key, event);}
-          pc.onaddstream = gotRemoteStream;
-
-          var client = clients.findOne({key:key});
-          client.pc = pc;
-
-          return pc;
-        }
-
-        var gotLocalDescription = function(description){
-
-          description.to = this;
-          var client = clients.findOne({key:description.to});
-          client.pc.setLocalDescription(description);
-          if (description.type == 'offer'){
-            console.log('send offer to '+description.to);
-          } else {
-            console.log('send answer to'+description.to);
-          }
-          connection.send(JSON.stringify(description));
-        }
-
-        var gotIceCandidate = function(event) {
-          if (event.candidate) {
-            console.log('getting ice candidate');
-            //send signal server
-            var data = {
-              to: this,
-              type: 'candidate',
-              label: event.candidate.sdpMLineIndex,
-              id: event.candidate.sdpMid,
-              candidate: event.candidate.candidate
-            };
-            connection.send(JSON.stringify(data));
-          }
-        }
-
         try {
             var m = JSON.parse(message.data);
             console.log('message:', m);
