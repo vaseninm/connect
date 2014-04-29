@@ -1,18 +1,22 @@
 'use strict';
 
 var pc = null;
+
 var WebSocket = window.WebSocket || window.MozWebSocket;
+
 var connection = null;
 
 var errorHandler = function(error){
   console.log(error);
 }
 
+var clients = require('clients')();
+
 var init = function(){
   connection = new WebSocket('ws://' + location.hostname + ':8080');
-  clients = window.clients();
 
   connectionHandlers();
+  clientsHandler();
 }
 
 var connectionHandlers = function(){
@@ -58,26 +62,60 @@ var connectionHandlers = function(){
             pc.addIceCandidate(candidate);
 
         } else if (data.type === 'list'){
-
             for (var i in data.list){
               clients.add({key:data.list[i]});
             }
-            updateList(clients.list());
 
-        } else if (data.type === 'add'){
-
-            clients.add({key:from});
-            updateList(clients.list());
-
-        } else if (data.type === 'leave'){
-            var client = clients.findOne({key:from});
-            if (typeof client.html != 'undefined'){
-              $(client.html).remove();
+            if (data.list.length){
+              pc.createOffer(gotLocalDescription, errorHandler, { 'mandatory': { 'OfferToReceiveAudio': true, 'OfferToReceiveVideo': true } });//create offer
             }
-            clients.remove(from);
-            updateList(clients.list());
-        }
-    };
+
+          } else if (data.type === 'add'){
+              clients.add({key:from});
+          } else if (data.type === 'leave'){
+              clients.remove(from);
+          }
+      };
+  }
+
+var clientsHandler = function(){
+
+  var updateList = function(list){
+
+    var $userCount = $('#usersCount');
+    $userCount.empty();
+    if (list.length){
+      $userCount.html('<h2>Пользователей: <span style="color:red">'+list.length+'</span></h2>');
+    }
+
+    $('#users').empty();
+    for (var i in list) {
+     $('<div/>', {text: list[i]}).appendTo('#users');
+    }
+  }
+
+  clients.addEvent({
+    name: 'clients prepare remove',
+    handler: function(client){
+      if (typeof client.html != 'undefined'){
+        $(client.html).remove();
+      }
+    }
+  });
+
+  clients.addEvent({
+    name: 'clients add',
+    handler: function(){
+      updateList(clients.list());
+    }
+  });
+
+  clients.addEvent({
+    name: 'clients remove',
+    handler: function(){
+      updateList(clients.list());
+    }
+  });
 }
 
 var gotLocalDescription = function(description){
@@ -110,32 +148,18 @@ var gotIceCandidate = function(event) {
     }
 };
 
-var updateList = function(list){
-
-  $('#users').empty();
-  if (list.length > 0 ){
-    $('button').show();
-  } else {
-    $('button').hide();
-  }
-  for (var i in list) {
-    $('<div/>', {text: list[i]}).appendTo('#users');
-  }
-}
-
 var addVideoElement = function (stream, key) {
-  var el = $('<video/>', {id:key, autoplay:true, controls:true}).appendTo('body')[0];
+  var o = {id:key, autoplay:true, controls:true};
+  if (key == 'local'){
+    o.muted = true;
+  }
+  var el = $('<video/>', o).appendTo('body')[0];
   el.src = URL.createObjectURL(stream);
 
   return el;
 }
 
 $(function(){
-
-    $('button').click(function(e){
-      pc.createOffer(gotLocalDescription, errorHandler, { 'mandatory': { 'OfferToReceiveAudio': true, 'OfferToReceiveVideo': true } });//create offer
-      return;
-  });
 
     console.log('Страница загружена');
     //создаем окно

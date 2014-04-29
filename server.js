@@ -8,7 +8,7 @@ var server = http.createServer(function(request, response) {
     // we don't have to implement anything.
 });
 
-var clients = require('./clients')();
+var clients = require('clients')();
 
 server.listen(8080, function() {});
 
@@ -86,6 +86,7 @@ var requestAcceptedHandler = function(connection){
     type: 'list',
     list: clients.list({exclude:request.key})
   }));
+
   var others = clients.list({exclude: request.key});
   var other = (others.length)?clients.findOne({key:others[0]}):undefined;
   if (other){
