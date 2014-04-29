@@ -1,5 +1,15 @@
 'use strict';
 
+if (!Modernizr.video || !Modernizr.audio){
+  alert('browser not support html5 video or audio');
+} 
+if (!Modernizr.websockets){
+  alert('websocket not support this browser');
+}
+if (!Modernizr.getusermedia || !Modernizr.peerconnection){
+  alert('webrtc not support this browser');
+}
+
 var WebSocket = window.WebSocket || window.MozWebSocket;
 
 var connection = null;
@@ -223,9 +233,11 @@ var addVideoElement = function (stream, key) {
   return el;
 }
 
+
 $(function(){
 
     console.log('Страница загружена');
+
     //создаем окно
     (function () {
 
