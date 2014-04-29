@@ -39,19 +39,16 @@ var requestAcceptedHandler = function(connection){
     }
     message = JSON.parse(message.utf8Data);
 
-    var others = clients.list({exclude:request.key});
-    var other = (others.length)?clients.findOne({key:others[0]}):undefined;
+    var to = clients.findOne({key:message.to});
+    console.log('new message ('+message.type+') from '+request.key+' to '+message.to);
 
-    if (typeof other !== 'undefined'){
+    if (typeof to !== 'undefined'){
       if (message.type === 'offer') {
-         other.connection.send(compareSend(message));
-         console.log('send offer');
+         to.connection.send(compareSend(message));
       } else if (message.type === 'answer'){
-         other.connection.send(compareSend(message));
-         console.log('send answer');
+         to.connection.send(compareSend(message));
       } else if (message.type === 'candidate'){
-         other.connection.send(compareSend(message));
-         console.log('send candidate');
+         to.connection.send(compareSend(message));
       }
     }
   }
@@ -88,13 +85,14 @@ var requestAcceptedHandler = function(connection){
   }));
 
   var others = clients.list({exclude: request.key});
-  var other = (others.length)?clients.findOne({key:others[0]}):undefined;
-  if (other){
+  others.forEach(function(e){
+    var other = clients.findOne({key:e});
     other.connection.send(compareSend({
         error: 0,
         type: 'add'})
     );
-  }
+  })
+
 }
 
 

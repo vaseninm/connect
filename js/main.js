@@ -63,19 +63,6 @@ var constraints = {
     }
   };
 
-var createPeerConnection = function(stream, key){
-
-  var pc = new RTCPeerConnection(servers);
-  pc.addStream(stream);
-  pc.onicecandidate = gotIceCandidate;
-  pc.onaddstream = gotRemoteStream;
-
-  var client = clients.findOne({key:key});
-  client.pc = pc;
-
-  return pc;
-}
-
 var clientsModule = require('clients');
 
 var clients = clientsModule();
@@ -95,6 +82,48 @@ var connectionHandlers = function(){
   connection.onerror = errorHandler;
 
   connection.onmessage = function (message) {
+    //functions
+        var createPeerConnection = function(stream, key){
+
+          var pc = new RTCPeerConnection(servers);
+          pc.addStream(stream);
+          pc.onicecandidate = function(event){gotIceCandidate.call(key, event);}
+          pc.onaddstream = gotRemoteStream;
+
+          var client = clients.findOne({key:key});
+          client.pc = pc;
+
+          return pc;
+        }
+
+        var gotLocalDescription = function(description){
+
+          description.to = this;
+          var client = clients.findOne({key:description.to});
+          client.pc.setLocalDescription(description);
+          if (description.type == 'offer'){
+            console.log('send offer to '+description.to);
+          } else {
+            console.log('send answer to'+description.to);
+          }
+          connection.send(JSON.stringify(description));
+        }
+
+        var gotIceCandidate = function(event) {
+          if (event.candidate) {
+            console.log('getting ice candidate');
+            //send signal server
+            var data = {
+              to: this,
+              type: 'candidate',
+              label: event.candidate.sdpMLineIndex,
+              id: event.candidate.sdpMid,
+              candidate: event.candidate.candidate
+            };
+            connection.send(JSON.stringify(data));
+          }
+        }
+
         try {
             var m = JSON.parse(message.data);
             console.log('message:', m);
@@ -116,7 +145,7 @@ var connectionHandlers = function(){
             var newPc = createPeerConnection(localStream, from);
             newPc.setRemoteDescription(new RTCSessionDescription(data));
             client.sdp = data.sdp;//add sdp
-            newPc.createAnswer(gotLocalDescription, errorHandler, { 'mandatory': { 'OfferToReceiveAudio': true, 'OfferToReceiveVideo': true } });//create answer
+            newPc.createAnswer(function(description){ gotLocalDescription.call(from, description);}, errorHandler, { 'mandatory': { 'OfferToReceiveAudio': true, 'OfferToReceiveVideo': true } });//create answer
 
         } else if (data.type === 'answer') {
             console.log('answer complete');
@@ -131,21 +160,20 @@ var connectionHandlers = function(){
             client.pc.addIceCandidate(candidate);
 
         } else if (data.type === 'list'){
-            for (var i in data.list){
-              clients.add({key:data.list[i]});
-            }
 
-            if (data.list.length){
-              var pc = createPeerConnection(localStream, data.list[0]);
-              pc.createOffer(gotLocalDescription, errorHandler, { 'mandatory': { 'OfferToReceiveAudio': true, 'OfferToReceiveVideo': true } });//create offer
-            }
-          } else if (data.type === 'add'){
-              clients.add({key:from});
-          } else if (data.type === 'leave'){
-              clients.remove(from);
-          }
-      };
+              data.list.forEach(function(e){
+                clients.add({key:e});
+                var pc = createPeerConnection(localStream, e);
+                pc.createOffer(function(description){console.log(e); gotLocalDescription.call(e, description);}, errorHandler, { 'mandatory': { 'OfferToReceiveAudio': true, 'OfferToReceiveVideo': true } });//create offer
+              });
+
+        } else if (data.type === 'add'){
+            clients.add({key:from});
+        } else if (data.type === 'leave'){
+            clients.remove(from);
+        }
   }
+}
 
 var clientsHandler = function(){
 
@@ -154,7 +182,7 @@ var clientsHandler = function(){
     var $userCount = $('#usersCount');
     $userCount.empty();
     if (list.length){
-      $userCount.html('<h2>Пользователей: <span style="color:red">'+list.length+'</span></h2>');
+      $userCount.html('<h2>Собеседников: <span style="color:red">'+list.length+'</span></h2>');
     }
 
     $('#users').empty();
@@ -178,35 +206,10 @@ var clientsHandler = function(){
   });
 }
 
-var gotLocalDescription = function(description){
-  var client = clients.findOne();
-  client.pc.setLocalDescription(description);
-  if (description.type == 'offer'){
-    console.log('send offer');
-  } else {
-    console.log('send answer');
-  }
-  connection.send(JSON.stringify(description));
-}
-
 var gotRemoteStream = function(remoteStream){
   var keys = clients.list({attribute:{sdp:remoteStream.target.remoteDescription.sdp}});
   var client = clients.findOne({key:keys[0]});
   client.html = addVideoElement(remoteStream.stream, keys[0]);
-};
-
-var gotIceCandidate = function(event) {
-    if (event.candidate) {
-      console.log('getting ice candidate');
-      //send signal server
-      var data = {
-        type: 'candidate',
-        label: event.candidate.sdpMLineIndex,
-        id: event.candidate.sdpMid,
-        candidate: event.candidate.candidate
-      };
-      connection.send(JSON.stringify(data));
-    }
 };
 
 var addVideoElement = function (stream, key) {
