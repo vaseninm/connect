@@ -1,20 +1,88 @@
 'use strict';
 
-var pc = null;
-
 var WebSocket = window.WebSocket || window.MozWebSocket;
 
 var connection = null;
+
+var localStream = null;
 
 var errorHandler = function(error){
   console.log(error);
 }
 
-var clients = require('clients')();
+var servers = {
+  iceServers: [
+    {url:'stun:stun.l.google.com:19302'},
+    {url:'stun:stun1.l.google.com:19302'},
+    {url:'stun:stun2.l.google.com:19302'},
+    {url:'stun:stun3.l.google.com:19302'},
+    {url:'stun:stun4.l.google.com:19302'},
+    {url:'stun:stun01.sipphone.com'},
+    {url:'stun:stun.ekiga.net'},
+    {url:'stun:stun.fwdnet.net'},
+    {url:'stun:stun.ideasip.com'},
+    {url:'stun:stun.iptel.org'},
+    {url:'stun:stun.rixtelecom.se'},
+    {url:'stun:stun.schlund.de'},
+    {url:'stun:stunserver.org'},
+    {url:'stun:stun.softjoys.com'},
+    {url:'stun:stun.voiparound.com'},
+    {url:'stun:stun.voipbuster.com'},
+    {url:'stun:stun.voipstunt.com'},
+    {url:'stun:stun.voxgratia.org'},
+    {url:'stun:stun.xten.com'},
+    {
+      url: 'turn:numb.viagenie.ca',
+      credential: 'muazkh',
+      username: 'webrtc@live.com'
+    },
+    {
+      url: 'turn:192.158.29.39:3478?transport=udp',
+      credential: 'JZEOEt2V3Qb0y27GRntt2u2PAYA=',
+      username: '28224511:1379330808'
+    },
+    {
+      url: 'turn:192.158.29.39:3478?transport=tcp',
+      credential: 'JZEOEt2V3Qb0y27GRntt2u2PAYA=',
+      username: '28224511:1379330808'
+    }
+  ]
+};
+
+var constraints = {
+    audio: true,
+    video: {
+      mandatory: {
+       minWidth: 640,
+       maxWidth: 960,
+       minHeight: 480,
+       maxHeight: 720,
+       minFrameRate: 20
+      },
+      optional: []
+    }
+  };
+
+var createPeerConnection = function(stream, key){
+
+  var pc = new RTCPeerConnection(servers);
+  pc.addStream(stream);
+  pc.onicecandidate = gotIceCandidate;
+  pc.onaddstream = gotRemoteStream;
+
+  peers.add({key:key, pc:pc});
+
+  return pc;
+}
+
+var clientsModule = require('clients');
+
+var clients = clientsModule();
+
+var peers = clientsModule();
 
 var init = function(){
   connection = new WebSocket('ws://' + location.hostname + ':8080');
-
   connectionHandlers();
   clientsHandler();
 }
@@ -42,13 +110,16 @@ var connectionHandlers = function(){
         if (data.type === 'offer') {
 
             console.log('offer complete');
-            pc.setRemoteDescription(new RTCSessionDescription(data));
+            var newPc = createPeerConnection(localStream, from);
+            newPc.setRemoteDescription(new RTCSessionDescription(data));
 
             var client = clients.findOne({key:from});
             client.sdp = data.sdp;//add sdp
-            pc.createAnswer(gotLocalDescription, errorHandler, { 'mandatory': { 'OfferToReceiveAudio': true, 'OfferToReceiveVideo': true } });//create answer
+            newPc.createAnswer(gotLocalDescription, errorHandler, { 'mandatory': { 'OfferToReceiveAudio': true, 'OfferToReceiveVideo': true } });//create answer
 
         } else if (data.type === 'answer') {
+
+            var pc = peers.findOne()['pc'];
 
             console.log('answer complete');
             pc.setRemoteDescription(new RTCSessionDescription(data));
@@ -56,6 +127,8 @@ var connectionHandlers = function(){
             client.sdp = data.sdp
 
         } else if (data.type === 'candidate') {
+
+            var pc = peers.findOne()['pc'];
 
             console.log('candidate complete');
             var candidate = new RTCIceCandidate(data);
@@ -67,6 +140,8 @@ var connectionHandlers = function(){
             }
 
             if (data.list.length){
+
+              var pc = createPeerConnection(localStream, from);
               pc.createOffer(gotLocalDescription, errorHandler, { 'mandatory': { 'OfferToReceiveAudio': true, 'OfferToReceiveVideo': true } });//create offer
             }
 
@@ -113,12 +188,14 @@ var clientsHandler = function(){
   clients.addEvent({
     name: 'clients remove',
     handler: function(){
+      peers.remove(peers.list()[0]);
       updateList(clients.list());
     }
   });
 }
 
 var gotLocalDescription = function(description){
+  var pc = peers.findOne()['pc'];
   pc.setLocalDescription(description);
   if (description.type == 'offer'){
     console.log('send offer');
@@ -164,67 +241,13 @@ $(function(){
     console.log('Страница загружена');
     //создаем окно
     (function () {
-    var constraints = {
-        "audio": true,
-        "video": {
-          "mandatory": {
 
-           "minWidth": 640,
-           "maxWidth": 960,
-           "minHeight": 480,
-           "maxHeight": 720,
-           "minFrameRate": 20
-          },
-          "optional": []
-        }
-      };
-
-      var servers = {}
-      servers.iceServers = [
-        {url:'stun:stun.l.google.com:19302'},
-        {url:'stun:stun1.l.google.com:19302'},
-        {url:'stun:stun2.l.google.com:19302'},
-        {url:'stun:stun3.l.google.com:19302'},
-        {url:'stun:stun4.l.google.com:19302'},
-        {url:'stun:stun01.sipphone.com'},
-        {url:'stun:stun.ekiga.net'},
-        {url:'stun:stun.fwdnet.net'},
-        {url:'stun:stun.ideasip.com'},
-        {url:'stun:stun.iptel.org'},
-        {url:'stun:stun.rixtelecom.se'},
-        {url:'stun:stun.schlund.de'},
-        {url:'stun:stunserver.org'},
-        {url:'stun:stun.softjoys.com'},
-        {url:'stun:stun.voiparound.com'},
-        {url:'stun:stun.voipbuster.com'},
-        {url:'stun:stun.voipstunt.com'},
-        {url:'stun:stun.voxgratia.org'},
-        {url:'stun:stun.xten.com'},
-        {
-          url: 'turn:numb.viagenie.ca',
-          credential: 'muazkh',
-          username: 'webrtc@live.com'
-        },
-        {
-          url: 'turn:192.158.29.39:3478?transport=udp',
-          credential: 'JZEOEt2V3Qb0y27GRntt2u2PAYA=',
-          username: '28224511:1379330808'
-        },
-        {
-          url: 'turn:192.158.29.39:3478?transport=tcp',
-          credential: 'JZEOEt2V3Qb0y27GRntt2u2PAYA=',
-          username: '28224511:1379330808'
-        }
-      ];
       getUserMedia(constraints, function(stream) {
-
             console.log('Видео разрешено');
-            addVideoElement(stream, 'local');
 
-            pc = new RTCPeerConnection(servers);
-            pc.addStream(stream);
-            pc.onicecandidate = gotIceCandidate;
-            pc.onaddstream = gotRemoteStream;
+            localStream = stream;
+
+            addVideoElement(stream, 'local');
 
             init();
 
