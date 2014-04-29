@@ -23,76 +23,73 @@ wsServer.on('request', function(request) {
     request.accept(null, request.origin);
 });
 
+var messageHandler = function(message){
+
+  if (message.type !== 'utf8') {
+     console.warn('Message [' + message + '] not valid.');
+     return;
+  }
+  message = JSON.parse(message.utf8Data);
+
+  var to = clients.findOne({key:message.to});
+  console.log('new message ('+message.type+') from '+this.key+' to '+message.to);
+
+  if (typeof to !== 'undefined'){
+    if (message.type === 'offer') {
+       to.connection.send(prepareSend(message, this));
+    } else if (message.type === 'answer'){
+       to.connection.send(prepareSend(message, this));
+    } else if (message.type === 'candidate'){
+       to.connection.send(prepareSend(message, this));
+    }
+  }
+}
+
+var closeHandler = function(){
+
+  clients.remove(this.key);
+
+  var others = clients.list();
+  if (others.length != 0){
+    //send all
+    for (var key in others){
+      var other = clients.findOne({key:others[key]});
+      other.connection.send(prepareSend({
+        error: 0,
+        type: 'leave'
+      }, this));
+    }
+  }
+}
+
+//compare for sending message
+var prepareSend = function(message, request){
+  return JSON.stringify({from:request.key, message:message})
+}
+
 var requestAcceptedHandler = function(connection){
   var request = this;
 
-  //compare for sending message
-  var compareSend = function(message){
-    return JSON.stringify({from:request.key, message:message})
-  }
-
-  var messageHandler = function(message){
-
-    if (message.type !== 'utf8') {
-       console.warn('Message [' + message + '] not valid.');
-       return;
-    }
-    message = JSON.parse(message.utf8Data);
-
-    var to = clients.findOne({key:message.to});
-    console.log('new message ('+message.type+') from '+request.key+' to '+message.to);
-
-    if (typeof to !== 'undefined'){
-      if (message.type === 'offer') {
-         to.connection.send(compareSend(message));
-      } else if (message.type === 'answer'){
-         to.connection.send(compareSend(message));
-      } else if (message.type === 'candidate'){
-         to.connection.send(compareSend(message));
-      }
-    }
-  }
-
-  var closeHandler = function(){
-
-    clients.remove(request.key);
-
-    var others = clients.list();
-    if (others.length != 0){
-      //send all
-      for (var key in others){
-        var other = clients.findOne({key:others[key]});
-        other.connection.send(compareSend({
-          error: 0,
-          type: 'leave'
-        }));
-      }
-    }
-  }
-
-  connection.on('message', messageHandler);
-  connection.on('close', closeHandler);
+  connection.on('message', function(message){ messageHandler.call(request, message)});
+  connection.on('close', function(){closeHandler.call(request)});
 
   clients.add({
       key: this.key,
       connection:connection
   });
 
-  connection.send(compareSend({
+  connection.send(prepareSend({
     error: 0,
     type: 'list',
     list: clients.list({exclude:request.key})
-  }));
+  }, request));
 
   var others = clients.list({exclude: request.key});
   others.forEach(function(e){
     var other = clients.findOne({key:e});
-    other.connection.send(compareSend({
+    other.connection.send(prepareSend({
         error: 0,
-        type: 'add'})
+        type: 'add'}, request)
     );
   })
-
 }
-
-
