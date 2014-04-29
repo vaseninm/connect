@@ -64,16 +64,12 @@ function clients(){
     return keys;
   }
 
-  var addEvent = function(ev){
-    event.on(ev.name, ev.handler); 
-  }
-
   return {
     add: add,
     remove: remove,
     list: list,
     findOne: findOne,
-    addEvent:addEvent
+    event:event
   }
 }
 

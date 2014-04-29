@@ -70,7 +70,8 @@ var createPeerConnection = function(stream, key){
   pc.onicecandidate = gotIceCandidate;
   pc.onaddstream = gotRemoteStream;
 
-  peers.add({key:key, pc:pc});
+  var client = clients.findOne({key:key});
+  client.pc = pc;
 
   return pc;
 }
@@ -78,8 +79,6 @@ var createPeerConnection = function(stream, key){
 var clientsModule = require('clients');
 
 var clients = clientsModule();
-
-var peers = clientsModule();
 
 var init = function(){
   connection = new WebSocket('ws://' + location.hostname + ':8080');
@@ -107,32 +106,29 @@ var connectionHandlers = function(){
             return;
         }
 
-        if (data.type === 'offer') {
+        if (data.type === 'offer' || data.type === 'answer' || data.type === 'candidate'){
+          var client = clients.findOne({key:from});
+        }
 
+        if (data.type === 'offer') {
             console.log('offer complete');
+
             var newPc = createPeerConnection(localStream, from);
             newPc.setRemoteDescription(new RTCSessionDescription(data));
-
-            var client = clients.findOne({key:from});
             client.sdp = data.sdp;//add sdp
             newPc.createAnswer(gotLocalDescription, errorHandler, { 'mandatory': { 'OfferToReceiveAudio': true, 'OfferToReceiveVideo': true } });//create answer
 
         } else if (data.type === 'answer') {
-
-            var pc = peers.findOne()['pc'];
-
             console.log('answer complete');
-            pc.setRemoteDescription(new RTCSessionDescription(data));
-            var client = clients.findOne({key:from});//add sdp
+
+            client.pc.setRemoteDescription(new RTCSessionDescription(data));
             client.sdp = data.sdp
 
         } else if (data.type === 'candidate') {
-
-            var pc = peers.findOne()['pc'];
-
             console.log('candidate complete');
+
             var candidate = new RTCIceCandidate(data);
-            pc.addIceCandidate(candidate);
+            client.pc.addIceCandidate(candidate);
 
         } else if (data.type === 'list'){
             for (var i in data.list){
@@ -140,11 +136,9 @@ var connectionHandlers = function(){
             }
 
             if (data.list.length){
-
-              var pc = createPeerConnection(localStream, from);
+              var pc = createPeerConnection(localStream, data.list[0]);
               pc.createOffer(gotLocalDescription, errorHandler, { 'mandatory': { 'OfferToReceiveAudio': true, 'OfferToReceiveVideo': true } });//create offer
             }
-
           } else if (data.type === 'add'){
               clients.add({key:from});
           } else if (data.type === 'leave'){
@@ -169,34 +163,24 @@ var clientsHandler = function(){
     }
   }
 
-  clients.addEvent({
-    name: 'clients prepare remove',
-    handler: function(client){
+  clients.event.on('clients prepare remove', function(client){
       if (typeof client.html != 'undefined'){
         $(client.html).remove();
       }
-    }
+    });
+
+  clients.event.on('clients add',function(){
+      updateList(clients.list());
   });
 
-  clients.addEvent({
-    name: 'clients add',
-    handler: function(){
+  clients.event.on('clients remove', function(){
       updateList(clients.list());
-    }
-  });
-
-  clients.addEvent({
-    name: 'clients remove',
-    handler: function(){
-      peers.remove(peers.list()[0]);
-      updateList(clients.list());
-    }
   });
 }
 
 var gotLocalDescription = function(description){
-  var pc = peers.findOne()['pc'];
-  pc.setLocalDescription(description);
+  var client = clients.findOne();
+  client.pc.setLocalDescription(description);
   if (description.type == 'offer'){
     console.log('send offer');
   } else {
