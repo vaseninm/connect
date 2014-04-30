@@ -25,11 +25,10 @@ wsServer.on('request', function(request) {
 
 var messageHandler = function(message){
 
-  if (message.type !== 'utf8') {
-     console.warn('Message [' + message + '] not valid.');
-     return;
+  message = prepareGet(message);
+  if (typeof message === 'undefined'){
+    return;
   }
-  message = JSON.parse(message.utf8Data);
 
   var to = clients.findOne({key:message.to});
   var data = message.data;
@@ -61,7 +60,17 @@ var closeHandler = function(){
   });
 }
 
-//compare for sending message
+//prepare get message
+var prepareGet = function(message){
+
+ if (message.type !== 'utf8') {
+     console.warn('Message [' + message + '] not valid.');
+     return undefined;
+  }
+  return JSON.parse(message.utf8Data);
+}
+
+//prepare for sending message
 var prepareSend = function(data, request){
   return JSON.stringify({from:request.key, data:data})
 }
