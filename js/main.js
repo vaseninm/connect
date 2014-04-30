@@ -84,16 +84,14 @@ var init = function(){
 }
 
 var gotLocalDescription = function(description){
-
-  description.to = this;
-  var client = clients.findOne({key:description.to});
+  var client = clients.findOne({key:this});
   client.pc.setLocalDescription(description);
   if (description.type == 'offer'){
-    console.log('send offer to '+description.to);
+    console.log('send offer to '+this);
   } else {
-    console.log('send answer to'+description.to);
+    console.log('send answer to'+this);
   }
-  connection.send(JSON.stringify(description));
+  connection.send(JSON.stringify({to:this, data:description}));
 }
 
 var gotIceCandidate = function(event) {
@@ -101,13 +99,12 @@ var gotIceCandidate = function(event) {
     console.log('getting ice candidate');
     //send signal server
     var data = {
-      to: this,
       type: 'candidate',
       label: event.candidate.sdpMLineIndex,
       id: event.candidate.sdpMid,
       candidate: event.candidate.candidate
     };
-    connection.send(JSON.stringify(data));
+    connection.send(JSON.stringify({to:this, data:data}));
   }
 }
 
@@ -133,11 +130,11 @@ var connectionHandlers = function(){
   connection.onerror = errorHandler;
 
   connection.onmessage = function (message) {
-    //functions
+
         try {
             var m = JSON.parse(message.data);
-            console.log('message:', m);
-            var data = m.message;
+            console.log('message: ', m);
+            var data = m.data;
             var from = m.from;
 
         } catch (e) {
@@ -154,14 +151,12 @@ var connectionHandlers = function(){
 
             var newPc = createPeerConnection(localStream, from);
             newPc.setRemoteDescription(new RTCSessionDescription(data));
-            client.sdp = data.sdp;//add sdp
             newPc.createAnswer(function(description){ gotLocalDescription.call(from, description);}, errorHandler, { 'mandatory': { 'OfferToReceiveAudio': true, 'OfferToReceiveVideo': true } });//create answer
 
         } else if (data.type === 'answer') {
             console.log('answer complete');
 
             client.pc.setRemoteDescription(new RTCSessionDescription(data));
-            client.sdp = data.sdp
 
         } else if (data.type === 'candidate') {
             console.log('candidate complete');
@@ -174,7 +169,7 @@ var connectionHandlers = function(){
               data.list.forEach(function(e){
                 clients.add({key:e});
                 var pc = createPeerConnection(localStream, e);
-                pc.createOffer(function(description){console.log(e); gotLocalDescription.call(e, description);}, errorHandler, { 'mandatory': { 'OfferToReceiveAudio': true, 'OfferToReceiveVideo': true } });//create offer
+                pc.createOffer(function(description){gotLocalDescription.call(e, description);}, errorHandler, { 'mandatory': { 'OfferToReceiveAudio': true, 'OfferToReceiveVideo': true } });//create offer
               });
 
         } else if (data.type === 'add'){
@@ -217,7 +212,8 @@ var clientsHandler = function(){
 }
 
 var gotRemoteStream = function(remoteStream){
-  var keys = clients.list({attribute:{sdp:remoteStream.target.remoteDescription.sdp}});
+
+  var keys = clients.list({attribute:{pc:remoteStream.currentTarget}});
   var client = clients.findOne({key:keys[0]});
   client.html = addVideoElement(remoteStream.stream, keys[0]);
 };
@@ -232,7 +228,6 @@ var addVideoElement = function (stream, key) {
 
   return el;
 }
-
 
 $(function(){
 

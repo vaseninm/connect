@@ -32,15 +32,16 @@ var messageHandler = function(message){
   message = JSON.parse(message.utf8Data);
 
   var to = clients.findOne({key:message.to});
-  console.log('new message ('+message.type+') from '+this.key+' to '+message.to);
+  var data = message.data;
+  console.log('new message ('+data.type+') from '+this.key+' to '+message.to);
 
   if (typeof to !== 'undefined'){
-    if (message.type === 'offer') {
-       to.connection.send(prepareSend(message, this));
-    } else if (message.type === 'answer'){
-       to.connection.send(prepareSend(message, this));
-    } else if (message.type === 'candidate'){
-       to.connection.send(prepareSend(message, this));
+    if (data.type === 'offer') {
+       to.connection.send(prepareSend(data, this));
+    } else if (data.type === 'answer'){
+       to.connection.send(prepareSend(data, this));
+    } else if (data.type === 'candidate'){
+       to.connection.send(prepareSend(data, this));
     }
   }
 }
@@ -61,8 +62,8 @@ var closeHandler = function(){
 }
 
 //compare for sending message
-var prepareSend = function(message, request){
-  return JSON.stringify({from:request.key, message:message})
+var prepareSend = function(data, request){
+  return JSON.stringify({from:request.key, data:data})
 }
 
 var requestAcceptedHandler = function(connection){
