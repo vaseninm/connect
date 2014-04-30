@@ -180,21 +180,22 @@ var connectionHandlers = function(){
   }
 }
 
-var clientsHandler = function(){
 
-  var updateList = function(list){
+var updateList = function(list){
 
-    var $userCount = $('#usersCount');
-    $userCount.empty();
-    if (list.length){
-      $userCount.html('<h2>Собеседников: <span style="color:red">'+list.length+'</span></h2>');
-    }
-
-    $('#users').empty();
-    for (var i in list) {
-     $('<div/>', {text: list[i]}).appendTo('#users');
-    }
+  var $userCount = $('#usersCount');
+  $userCount.empty();
+  if (list.length){
+    $userCount.html('<h2>Собеседников: <span style="color:red">'+list.length+'</span></h2>');
   }
+
+  $('#users').empty();
+  for (var i in list) {
+   $('<div/>', {text: list[i]}).appendTo('#users');
+  }
+}
+
+var clientsHandler = function(){
 
   clients.event.on('clients prepare remove', function(client){
       if (typeof client.html != 'undefined'){
@@ -247,5 +248,4 @@ $(function(){
 
         }, errorHandler);
     })();
-
 });

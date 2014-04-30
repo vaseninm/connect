@@ -10,6 +10,20 @@ var server = http.createServer(function(request, response) {
 
 var clients = require('clients')();
 
+var winston = require('winston');
+var transports = [
+  new winston.transports.Console({
+    colorize:true,
+    level:'info'
+  }),
+  new winston.transports.File({
+    filename: 'debug.log', 
+    level:'info'
+  })
+];
+
+var log = new winston.Logger({transports:transports});
+
 server.listen(8080, function() {});
 
 // create the server
@@ -32,7 +46,7 @@ var messageHandler = function(message){
 
   var to = clients.findOne({key:message.to});
   var data = message.data;
-  console.log('new message ('+data.type+') from '+this.key+' to '+message.to);
+  log.info('new message ('+data.type+') from '+this.key+' to '+message.to);
 
   if (typeof to !== 'undefined'){
     if (data.type === 'offer') {
@@ -64,7 +78,7 @@ var closeHandler = function(){
 var prepareGet = function(message){
 
  if (message.type !== 'utf8') {
-     console.warn('Message [' + message + '] not valid.');
+     log.error('Message [' + message + '] not valid.');
      return undefined;
   }
   return JSON.parse(message.utf8Data);
