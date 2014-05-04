@@ -1,13 +1,13 @@
 'use strict';
 
 if (!Modernizr.video || !Modernizr.audio){
-  alert('browser not support html5 video or audio');
+  alert('browser not support html5 video or audio.');
 } 
 if (!Modernizr.websockets){
-  alert('websocket not support this browser');
+  alert('websocket not support this browser. Check this <a href="http://caniuse.com/#feat=websockets">link</a>.');
 }
 if (!Modernizr.getusermedia || !Modernizr.peerconnection){
-  alert('webrtc not support this browser');
+  alert('webrtc not support this browser. Check this <a href="http://caniuse.com/#feat=rtcpeerconnection">link</a>.');
 }
 
 var WebSocket = window.WebSocket || window.MozWebSocket;
