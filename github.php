@@ -2,6 +2,7 @@
 
 $dir = __DIR__;
 
+//pulling
 `git pull`;
-`pkill node {$dir}/server.js`;
-`node {$dir}/server.js`;
+exec("pkill node");
+exec("nohup node {$dir}/server.js > /dev/null &");
