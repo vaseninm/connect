@@ -3,16 +3,60 @@
 <head>
 	<title>Тест WebRTC</title>
 	<meta charset="utf-8">
-	<script language="JavaScript" src="//code.jquery.com/jquery-2.1.0.min.js"></script>
-        <script language="JavaScript" src="./js/adapter.js"></script>
-        <script language="JavaScript" src="./clients_bundle.js"></script>
-        <script language="JavaScript" src="./js/modernizr.js"></script>
-	<script language="JavaScript" src="./js/main.js"></script>
+        <script type="text/javascript" src="./js/yepnope.1.5.4-min.js"></script>
+        <script type="text/javascript" src="./js/modernizr.js"></script>
+        <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+        <script type="text/javascript" charset="utf-8">
+          $(function(){
+            yepnope([{
+              test: Modernizr.websockets && Modernizr.getusermedia && Modernizr.peerconnection,
+              yep: ['js/adapter.js', 'js/clients_bundle.js', 'js/main.js'],
+              complete: function(){
+                var wsEr = !Modernizr.websockets, wrtcEr = !Modernizr.getusermedia || !Modernizr.peerconnection;
+                if(wsEr || wrtcEr){
+                  if (wsEr){
+                    $('.no-websocket').show();
+                  } 
+                  if (wrtcEr){
+                    $('.no-webrtc').show();
+                  }
+                } else {
+                  $('#base').show(); 
+                }
+              }
+            }]);  
+          });
+        </script>
+        <style type="text/css" media="screen">
+          .no-websocket iframe, .no-webrtc iframe {
+            width:800px; 
+            height:355px;
+          }
+          .hide {
+            display:none; 
+          }
+          .no-js #no-js-notify{
+            display:block; 
+          }
+        </style>
 </head>
 <body>
-	<h1>Тест WebRTC</h1>
+  <div id="base" class="hide">
+    
+    <h1>Тест WebRTC</h1>
     <div id="usersCount"></div>
     <div id="users"></div>
-	<div id="content"></div>
+    <div id="content"></div>
+
+  </div>
+  <div id="no-js-notify" class="hide">
+    У вас отключен js. 
+  </div>
+  <div class="no-websocket hide">
+    Ваш браузер не поддерживает web sockets. 
+    <iframe src="http://caniuse.com/websockets/embed/"></iframe></div>
+  <div class="no-webrtc hide">
+    Ваш браузер не поддерживает webrtc.
+    <iframe src="http://caniuse.com/rtcpeerconnection/embed/"></iframe></div>
 </body>
 </html>
