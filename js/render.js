@@ -1,22 +1,23 @@
 var render = (function(){
-  var updateList = function(list){
 
-    var $userCount = $('#usersCount');
-    $userCount.empty();
-    if (list.length){
-      $userCount.html('<h2>Собеседников <span style="color:red">'+list.length+'</span></h2>');
-    }
+  var addList = function(key){
+    $('<div/>', {'text':key, id:'list'+key}).appendTo('#users');  
+    var $list = $('#listCount');
+    $list.text(parseInt($list.text())+1);
+  }
 
-    $('#users').empty();
-    for (var i in list) {
-     $('<div/>', {text: list[i]}).appendTo('#users');
-    }
+  var removeList = function(key){
+    $(document.getElementById('list'+key)).remove();
+    var $list = $('#listCount');
+    $list.text(parseInt($list.text())-1);
   }
 
   var addVideoElement = function (stream, key) {
     var o = {id:key, autoplay:true, controls:true};
     if (key == 'local'){
       o.muted = true;
+    } else {
+      addList(key); 
     }
     var el = $('<video/>', o).appendTo('body')[0];
     el.src = URL.createObjectURL(stream);
@@ -24,8 +25,16 @@ var render = (function(){
     return el;
   }
 
+  var removeVideoElement = function(key){
+    removeList(key);
+    $(document.getElementById(key)).remove();
+  }
+
   return {
+    init: function(){
+     $('#base').show();  
+    },
     addVideoElement: addVideoElement,
-    updateList: updateList
+    removeVideoElement: removeVideoElement
   }
 })();

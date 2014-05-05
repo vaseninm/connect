@@ -7,6 +7,10 @@ var clients = require('clients')();
 mediator.installTo(clients);
 mediator.installTo(connection);
 
+connection.subscribe('websocket open', function(){
+  render.init();
+});
+
 connection.subscribe('local stream', function(stream){
  render.addVideoElement(stream, 'local');
 });
@@ -15,13 +19,9 @@ connection.subscribe('got remote stream', function(stream, key){
   render.addVideoElement(stream, key);
 });
 
-clients.subscribe('client add',function(){
-    render.updateList(clients.list());
-});
-
 clients.subscribe('client remove', function(key){
-    render.updateList(clients.list());
-    $(document.getElementById(key)).remove();
+    render.removeVideoElement(key);
+
 });
 
 $(function(){

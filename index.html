@@ -20,9 +20,7 @@
                   if (wrtcEr){
                     $('.no-webrtc').show();
                   }
-                } else {
-                  $('#base').show(); 
-                }
+                } 
               }
             }]);  
           });
@@ -38,12 +36,16 @@
           .no-js #no-js-notify{
             display:block; 
           }
+          .red {
+            color: red; 
+          }
         </style>
 </head>
 <body>
   <div id="base" class="hide">
     
     <h1>Тест WebRTC</h1>
+    <h3>Собеседников <span id="listCount" class="red">0</span></h3>
     <div id="usersCount"></div>
     <div id="users"></div>
     <div id="content"></div>
