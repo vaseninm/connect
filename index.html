@@ -8,11 +8,11 @@
         <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
         <script type="text/javascript" charset="utf-8">
           $(function(){
+            var wsEr = !Modernizr.websockets, wrtcEr = !Modernizr.getusermedia || !Modernizr.peerconnection;
             yepnope([{
-              test: Modernizr.websockets && Modernizr.getusermedia && Modernizr.peerconnection,
-              yep: ['js/adapter.js', 'js/clients_bundle.js', 'js/main.js'],
+              test: !wsEr && !wrtcEr,
+              yep: ['js/adapter.js', 'js/bundle.js', 'js/connection.js', 'js/render.js', 'js/main.js'],
               complete: function(){
-                var wsEr = !Modernizr.websockets, wrtcEr = !Modernizr.getusermedia || !Modernizr.peerconnection;
                 if(wsEr || wrtcEr){
                   if (wsEr){
                     $('.no-websocket').show();

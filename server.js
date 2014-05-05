@@ -8,7 +8,11 @@ var server = http.createServer(function(request, response) {
     // we don't have to implement anything.
 });
 
+var mediator = require('mediator');
+
 var clients = require('clients')();
+
+mediator.installTo(clients);
 
 var winston = require('winston');
 var transports = [

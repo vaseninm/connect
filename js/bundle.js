@@ -1,3 +1,4 @@
+require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({"O0HrNI":[function(require,module,exports){
 'use strict'
 
 function clients(){
@@ -71,3 +72,41 @@ function clients(){
 }
 
 module.exports = clients;
+
+},{}],"clients":[function(require,module,exports){
+module.exports=require('O0HrNI');
+},{}],"B/E7vX":[function(require,module,exports){
+var mediator = (function() {
+    var subscribe = function(channel, fn) {
+        if (!mediator.channels[channel]) mediator.channels[channel] = [];
+        mediator.channels[channel].push({ context: this, callback: fn });
+        return this;
+    },
+ 
+    publish = function(channel) {
+        if (!mediator.channels[channel]) return false;
+        var args = Array.prototype.slice.call(arguments, 1);
+        for (var i = 0, l = mediator.channels[channel].length; i < l; i++) {
+            var subscription = mediator.channels[channel][i];
+            subscription.callback.apply(subscription.context, args);
+        }
+        console.log('[event]', channel);
+        return this;
+    };
+ 
+    return {
+        channels: {},
+        publish: publish,
+        subscribe: subscribe,
+        installTo: function(obj) {
+            obj.subscribe = subscribe;
+            obj.publish = publish;
+        }
+    };
+}());
+
+module.exports = mediator;
+
+},{}],"mediator":[function(require,module,exports){
+module.exports=require('B/E7vX');
+},{}]},{},[])

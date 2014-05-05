@@ -1,5 +1,6 @@
 node_modules/
 !node_modules/clients.js
+!node_modules/mediator.js
 .idea/
 compile.sh
 debug.log
