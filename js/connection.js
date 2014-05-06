@@ -45,10 +45,8 @@ var connection = (function(){
     audio: true,
     video: {
       mandatory: {
-       minWidth: 640,
-       maxWidth: 960,
-       minHeight: 480,
-       maxHeight: 720,
+       maxWidth: 640,
+       maxHeight: 480,
        minFrameRate: 20
       },
       optional: []
