@@ -3,18 +3,50 @@
 <head>
 	<title>Тест WebRTC</title>
 	<meta charset="utf-8">
-	<script language="JavaScript" src="http://code.jquery.com/jquery-2.1.0.min.js"></script>
-	<script language="JavaScript" src="./main.js"></script>
+	<script language="JavaScript" src="bower_components/jquery/dist/jquery.js"></script>
+	<script language="JavaScript" src="js/client.js"></script>
+
+	<link rel="stylesheet" type="text/css" href="bower_components/reset-css/reset.css" />
+	<link rel="stylesheet" type="text/css" href="css/main.css" />
 </head>
 <body>
-	<h1>Тест WebRTC</h1>
 	<div id="content">
-		<div class="video" id="local"></div>
-		<div class="video" id="user" style="display: none;"></div>
-		<div id="users">
-
+		<h1>Тест WebRTC</h1>
+		<div id="video">
+			<div class="video" id="local">
+				<video autoplay="autoplay"></video>
+			</div>
+			<div class="video">
+				<video autoplay="autoplay"></video>
+			</div>
+			<div class="video">
+				<video autoplay="autoplay"></video>
+			</div>
+			<div class="video">
+				<video autoplay="autoplay"></video>
+			</div>
+			<div class="video">
+				<video autoplay="autoplay"></video>
+			</div>
+			<div class="video">
+				<video autoplay="autoplay"></video>
+			</div>
+			<div class="video">
+				<video autoplay="autoplay"></video>
+			</div>
+			<div class="video">
+				<video autoplay="autoplay"></video>
+			</div>
+			<div class="video">
+				<video autoplay="autoplay"></video>
+			</div>
 		</div>
 	</div>
-	<div id="call" style="display: none"><a href="#">Подключиться</a></div>
+
+	<!-- Немного скрытых элементов для копирования -->
+	<div class="video" id="remote" style="display: none;">
+		<video autoplay="autoplay"></video>
+	</div>
+
 </body>
 </html>

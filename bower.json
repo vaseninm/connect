@@ -1,0 +1,16 @@
+{
+    "name": "pliv.ru",
+    "version": "0.0.1",
+    "homepage": "https://github.com/vaseninm/connect",
+    "authors": [
+        "vaseninm <vasenin@pixelio.ru>"
+    ],
+    "dependencies": {
+        "jquery": "*",
+        "angular-latest": "*",
+        "socket.io": "*",
+        "reset-css": "*"
+    },
+    "main": "index.html",
+    "license": "MIT"
+}

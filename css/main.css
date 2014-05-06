@@ -1,0 +1,33 @@
+h1 {
+    text-align: center;
+    font-size: 60px;
+}
+#content {
+    display: block;
+    width: 1200px;
+    height: 100%;
+    margin: 0 auto;
+}
+
+#video {
+}
+
+.video {
+    display: inline;
+    width: 300px;
+    height: 200px;
+    float: left;
+    border: 1px solid #000088;
+    border-radius: 5px;
+    margin: 20px 30px;
+}
+
+.video#local {
+    border: 1px solid #008800;
+}
+
+video {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
