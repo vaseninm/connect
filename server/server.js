@@ -1,84 +1,46 @@
-var WebSocketServer = require('websocket').server;
-var http = require('http');
+var io = require('socket.io').listen(1488);
 
-var server = http.createServer(function(request, response) {
-    // process HTTP request. Since we're writing just WebSockets server
-    // we don't have to implement anything.
-});
-server.listen(1337, function() { });
+var clients = {}; // {id: {id:},}
 
-// create the server
-wsServer = new WebSocketServer({
-    httpServer: server
-});
 
-var clients = [];
+io.sockets.on('connection', function (socket) {
 
-// WebSocket server
-wsServer.on('request', function(request) {
-    var connection = request.accept(null, request.origin);
+    var id = socket.id;
 
-    console.log('Подключен клиент ['+ request.key +'].');
+    clients[id] = {
+        id: id
+    };
 
-    connection.send(JSON.stringify({
-        error: 0,
-        type: 'connect',
-        key: request.key,
-        list: clients
-    }));
+    var outputClientList = [];
 
-    connection.on('message', function(message) {
-        if (message.type !== 'utf8') {
-            console.warn('Message [' + message + '] not valid.');
-            return;
-        }
+    var i = 0;
+    for (id in clients) {
+        outputClientList[id] = clients;
+        outputClientList[id].num = i++;
+    }
 
-        message = JSON.parse(message.utf8Data);
-
-        if (message.type === 'new') {
-            if (clients.length >= 10) {
-                this.send(JSON.stringify({
-                    error: 1
-                }));
-                return;
-            }
-
-            var client = {
-                description: message.description,
-                key: request.key
-            };
-
-            clients.push(client);
-
-            wsServer.broadcast(JSON.stringify({
-                error: 0,
-                type: 'new',
-                client: client
-            }));
-
-            console.log(clients.length);
-        } else if (message.action === 'get') {
-            this.send(JSON.stringify({
-                error: 0,
-                type: 'list',
-                list: clients
-            }));
-        }
+    socket.emit('sendInfoToNewClient', {
+        id: id,
+        clients: outputClientList
     });
 
-    connection.on('close', function() {
-        for (var i in clients) {
-            if (clients[i].key == request.key) {
-                wsServer.broadcast(JSON.stringify({
-                    error: 0,
-                    type: 'leave',
-                    client: clients[i]
-                }));
+    socket.broadcast.emit('newClient', {
+        client: outputClientList[i]
+    });
 
-                clients.splice(i, 1);
-            }
+    socket.on('offerToClient', function(data) {
+        if (data.id) {
+            socket.sockets[data.id].emit('offerFromClient', {
+                id: clients[data.id],
+                type: data.type,
+                description: data.description
+            })
+        } else {
+            socket.broadcast.emit('offerFromClient', {
+                id: clients[data.id],
+                type: data.type,
+                description: data.description
+            })
         }
-
-        console.log('Отключен клиент [' + request.key + '].');
     });
 });

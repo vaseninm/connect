@@ -1,11 +1,20 @@
 $(function(){
-    var pc = null;
-    var PeerConnection = window.mozRTCPeerConnection || window.webkitRTCPeerConnection;
-    var IceCandidate = window.mozRTCIceCandidate || window.RTCIceCandidate;
-    var SessionDescription = window.mozRTCSessionDescription || window.RTCSessionDescription;
-    var WebSocket = window.WebSocket || window.MozWebSocket;
-    navigator.getUserMedia = navigator.getUserMedia || navigator.mozGetUserMedia || navigator.webkitGetUserMedia;
-    var connection = new WebSocket('ws://' + location.hostname + ':1337');
+    var clients = {};
+    var userId = null;
+
+    var WebRTC = $.fn.WebRTC({
+        onGetLocalVideo: function (url) {
+            $('#local video').attr('src', url);
+        },
+        onServerConnect: function(socket, id, clientList) {
+            userId = id;
+            clients = clientList;
+            WebRTC.callToAll();
+        },
+        onCall: function(clientId) {
+            WebRTC.answer(clientId);
+        }
+    });
 
 
 });
