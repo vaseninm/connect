@@ -1,6 +1,9 @@
 (function( $ ){
 
     var defaults = {
+        host: 'localhost',
+        port: '1488',
+        secure: false,
         onGetLocalVideo: function (url) {},
         onCall: function (clientId) {},
         onServerConnect: function (connection, id, clients) {},
@@ -18,40 +21,57 @@
         var IceCandidate = window.mozRTCIceCandidate || window.RTCIceCandidate;
         var SessionDescription = window.mozRTCSessionDescription || window.RTCSessionDescription;
         navigator.getUserMedia = navigator.getUserMedia || navigator.mozGetUserMedia || navigator.webkitGetUserMedia;
-        var pc = new PeerConnection(null);
-        var localStream = null;
+
         var socket = null;
+        var pc = new PeerConnection(null);
 
         /* Инициализация */
         navigator.getUserMedia({ audio: true, video: true }, function(stream) {
             var url = URL.createObjectURL(stream);
 
-            localStream = stream;
-            options.onGetLocalVideo(url);
+            console.log('Получено лоакальное видео');
 
-            pc = new PeerConnection(null);
             pc.addStream(stream);
             pc.onaddstream = function (event) {
                 console.log(event);
+                console.log('Получен удаленый стрим');
             };
-            pc.onicecandidate = function () {
+            pc.onicecandidate = function (iceCandidate) {
+                console.log('Получен айс кандидат', iceCandidate);
+            };
 
-            };
+            options.onGetLocalVideo(url);
         }, function(error) {
-            console.log(error);
+            console.log('Получили ошибку', error);
         });
 
-        socket = io.connect('http://localhost:1488');
+        socket = io.connect( ( options.secure ? 'https' : 'http' ) + '://' + options.host + ':' + options.port);
         socket.on('connect', function () {
+            console.log('Подключились к сокет серверу');
+
             socket.on('sendInfoToNewClient', function(data) {
+                console.log('Получен свои данные клиента', data);
                 options.onServerConnect(socket, data.id, data.clients);
             });
 
+            socket.on('sendInfoAboutNewClient', function(data) {
+                console.log('Получен чужие данные клиента', data);
+            });
+
+            socket.on('sendInfoAboutDisconnectedClient', function(data) {
+                console.log('Отключен клиент', data);
+            });
+
             socket.on('offerFromClient', function (data) {
-                pc.setRemoteDescription(new SessionDescription(data.description));
-                if (data.type === 'offer') {
-                    options.onCall(data.id);
-                }
+                console.log('Получен ', data.type);
+
+                pc.setRemoteDescription(new SessionDescription(data.description), function() {
+                    if (data.type === 'offer') {
+                        options.onCall(data.id);
+                    }
+                }, function(error) {
+                    console.log('Возникла ошибка', error);
+                });
             })
         });
 
@@ -70,8 +90,23 @@
 
         /* Приватные функции */
         var sendOffer = function (clientId, type) {
-            pc.createOffer(function (description) {
-                    pc.setLocalDescription(description);
+            if (type === 'offer') {
+                var fn = 'createOffer';
+            } else if (type === 'answer') {
+                var fn = 'createAnswer';
+            } else {
+                throw new Error();
+            }
+
+            console.log('Вызван ', fn);
+
+            pc[fn](function (description) {
+                    pc.setLocalDescription(description, function() {
+                        console.log('Локал дескрипшн установлен');
+                    }, function(error) {
+                        console.log('Возникла ошибка', error);
+                    });
+
                     socket.emit('offerToClient', {
                         id: clientId,
                         type: type,

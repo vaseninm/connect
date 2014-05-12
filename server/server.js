@@ -1,46 +1,62 @@
+var _ = require('underscore');
 var io = require('socket.io').listen(1488);
+io.set('log level', 2);
 
 var clients = {}; // {id: {id:},}
 
 
 io.sockets.on('connection', function (socket) {
 
-    var id = socket.id;
-
-    clients[id] = {
-        id: id
+    clients[socket.id] = {
+        id: socket.id
     };
-
-    var outputClientList = [];
-
-    var i = 0;
-    for (id in clients) {
-        outputClientList[id] = clients;
-        outputClientList[id].num = i++;
-    }
-
     socket.emit('sendInfoToNewClient', {
-        id: id,
-        clients: outputClientList
+        id: socket.id,
+        clients: toOutputList()
     });
 
-    socket.broadcast.emit('newClient', {
-        client: outputClientList[i]
+    socket.broadcast.emit('sendInfoAboutNewClient', {
+        client: toOutputList(id)
     });
 
     socket.on('offerToClient', function(data) {
+        console.log(data);
         if (data.id) {
-            socket.sockets[data.id].emit('offerFromClient', {
-                id: clients[data.id],
+            io.sockets.sockets[data.id].emit('offerFromClient', {
+                id: socket.id,
                 type: data.type,
                 description: data.description
             })
         } else {
             socket.broadcast.emit('offerFromClient', {
-                id: clients[data.id],
+                id: socket.id,
                 type: data.type,
                 description: data.description
             })
         }
     });
+
+    socket.on('disconnect', function () {
+        delete clients[socket.id];
+
+        socket.emit('sendInfoAboutDisconnectedClient', {
+            id: socket.id
+        });
+    });
+
+    /* Приватные методы */
+    function toOutputList(requireId) {
+        var outputClientList = [];
+
+        var i = 0;
+
+        for (id in clients) {
+            outputClientList[i] = _.clone(clients[id]);
+            outputClientList[i].num = ++i;
+
+            if (requireId) return outputClientList.pop();
+        }
+
+        return outputClientList;
+    }
 });
