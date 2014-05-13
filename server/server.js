@@ -17,31 +17,30 @@ io.sockets.on('connection', function (socket) {
     });
 
     socket.broadcast.emit('sendInfoAboutNewClient', {
-        client: toOutputList(id)
+        client: toOutputList(socket.id)
     });
 
     socket.on('offerToClient', function(data) {
-        if (data.id) {
-            io.sockets.sockets[data.id].emit('offerFromClient', {
-                id: socket.id,
-                type: data.type,
-                description: data.description
-            })
-        } else {
-            socket.broadcast.emit('offerFromClient', {
-                id: socket.id,
-                type: data.type,
-                description: data.description
-            })
-        }
+        io.sockets.sockets[data.id].emit('offerFromClient', {
+            id: socket.id,
+            type: data.type,
+            description: data.description
+        });
+    });
+
+    socket.on('iceCandidateToClient', function(data) {
+        io.sockets.sockets[data.id].emit('iceCandidateFromClient', {
+            id: socket.id,
+            iceCandidate: data.iceCandidate
+        });
     });
 
     socket.on('disconnect', function () {
-        delete clients[socket.id];
-
         socket.broadcast.emit('sendInfoAboutDisconnectedClient', {
-            id: socket.id
+            client: clients[socket.id]
         });
+
+        delete clients[socket.id];
     });
 
     /* Приватные методы */

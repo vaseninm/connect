@@ -44,17 +44,17 @@
             console.log('Подключились к сокет серверу');
 
             socket.on('sendInfoToNewClient', function(data) {
-                console.log('Получен свои данные клиента', data);
+                console.log('Ваш id', data.id);
                 options.onServerConnect(socket, data.id, data.clients);
             });
 
             socket.on('sendInfoAboutNewClient', function(data) {
-                console.log('Получен чужие данные клиента', data);
+                console.log('Подлючен клиент', data.client.id);
             });
 
             socket.on('sendInfoAboutDisconnectedClient', function(data) {
-                console.log('Отключен клиент', data);
-                options.onRemoveRemoteVideo(data.id);
+                console.log('Отключен клиент', data.client.id);
+                options.onRemoveRemoteVideo(data.client.id);
             });
 
             socket.on('offerFromClient', function (data) {
@@ -69,6 +69,15 @@
                 }, function(error) {
                     console.log('Возникла ошибка', error);
                 });
+            })
+
+            socket.on('iceCandidateFromClient', function (data) {
+                console.log('Получен ice candidate от пользователя');
+
+                var pc = getPeerConnection(data.id);
+                var candidate = new IceCandidate(data.iceCandidate.candidate);
+
+                pc.addIceCandidate(candidate);
             })
         });
 
@@ -95,7 +104,7 @@
                 throw new Error();
             }
 
-            console.log('Вызван ', fn);
+            console.log('Вызван', fn);
 
             var pc = getPeerConnection(clientId);
 
@@ -134,6 +143,15 @@
                 };
                 pc.onicecandidate = function (iceCandidate) {
                     console.log('Получен айс кандидат', iceCandidate);
+
+                    if (! iceCandidate.candidate) return false;
+
+                    var clientId = getClientIdByPeerConnection(iceCandidate.currentTarget);
+
+                    socket.emit('iceCandidateToClient', {
+                        id: clientId,
+                        iceCandidate: iceCandidate
+                    });
                 };
 
                 clientList[clientId] = pc;
