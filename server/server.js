@@ -53,7 +53,7 @@ io.sockets.on('connection', function (socket) {
             outputClientList[i] = _.clone(clients[id]);
             outputClientList[i].num = ++i;
 
-            if (requireId) return outputClientList.pop();
+            if (requireId && requireId === id) return outputClientList.pop();
         }
 
         return outputClientList;
