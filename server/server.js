@@ -10,6 +10,7 @@ io.sockets.on('connection', function (socket) {
     clients[socket.id] = {
         id: socket.id
     };
+
     socket.emit('sendInfoToNewClient', {
         id: socket.id,
         clients: toOutputList()
@@ -20,7 +21,6 @@ io.sockets.on('connection', function (socket) {
     });
 
     socket.on('offerToClient', function(data) {
-        console.log(data);
         if (data.id) {
             io.sockets.sockets[data.id].emit('offerFromClient', {
                 id: socket.id,
@@ -39,7 +39,7 @@ io.sockets.on('connection', function (socket) {
     socket.on('disconnect', function () {
         delete clients[socket.id];
 
-        socket.emit('sendInfoAboutDisconnectedClient', {
+        socket.broadcast.emit('sendInfoAboutDisconnectedClient', {
             id: socket.id
         });
     });

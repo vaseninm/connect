@@ -8,6 +8,7 @@
         onCall: function (clientId) {},
         onServerConnect: function (connection, id, clients) {},
         onGetRemoteVideo: function (clientId, url) {},
+        onRemoveRemoteVideo: function (clientId) {},
         onGetIncommingIceCandidate: function (clientId, iceCandidate) {},
         onGetOutgoingIceCandidate: function (clientId, iceCandidate) {},
         onError: function (code, text) {}
@@ -23,29 +24,22 @@
         navigator.getUserMedia = navigator.getUserMedia || navigator.mozGetUserMedia || navigator.webkitGetUserMedia;
 
         var socket = null;
-        var pc = new PeerConnection(null);
+        var localStream = null;
+        var clientList = {};
 
         /* Инициализация */
         navigator.getUserMedia({ audio: true, video: true }, function(stream) {
-            var url = URL.createObjectURL(stream);
-
             console.log('Получено лоакальное видео');
 
-            pc.addStream(stream);
-            pc.onaddstream = function (event) {
-                console.log(event);
-                console.log('Получен удаленый стрим');
-            };
-            pc.onicecandidate = function (iceCandidate) {
-                console.log('Получен айс кандидат', iceCandidate);
-            };
+            localStream = stream;
 
-            options.onGetLocalVideo(url);
+            options.onGetLocalVideo(URL.createObjectURL(stream));
         }, function(error) {
             console.log('Получили ошибку', error);
         });
 
         socket = io.connect( ( options.secure ? 'https' : 'http' ) + '://' + options.host + ':' + options.port);
+
         socket.on('connect', function () {
             console.log('Подключились к сокет серверу');
 
@@ -60,10 +54,13 @@
 
             socket.on('sendInfoAboutDisconnectedClient', function(data) {
                 console.log('Отключен клиент', data);
+                options.onRemoveRemoteVideo(data.id);
             });
 
             socket.on('offerFromClient', function (data) {
-                console.log('Получен ', data.type);
+                console.log('Получен', data.type);
+
+                var pc = getPeerConnection(data.id);
 
                 pc.setRemoteDescription(new SessionDescription(data.description), function() {
                     if (data.type === 'offer') {
@@ -80,9 +77,9 @@
             call: function (clientId) {
                 sendOffer(clientId, 'offer');
             },
-            callToAll: function () {
-                sendOffer(null, 'offer');
-            },
+//            callToAll: function () {
+//                sendOffer(null, 'offer');
+//            },
             answer: function (clientId) {
                 sendOffer(clientId, 'answer');
             }
@@ -99,6 +96,8 @@
             }
 
             console.log('Вызван ', fn);
+
+            var pc = getPeerConnection(clientId);
 
             pc[fn](function (description) {
                     pc.setLocalDescription(description, function() {
@@ -117,6 +116,40 @@
                 },
                 { mandatory: { OfferToReceiveAudio: true, OfferToReceiveVideo: true } }
             );
+        }
+
+        var getPeerConnection = function (clientId) {
+            if (! clientList[clientId]) {
+
+                var pc = new PeerConnection(null);
+
+                pc.addStream(localStream);
+                pc.onaddstream = function (event) {
+                    console.log('Получен удаленый стрим');
+
+                    var clientId = getClientIdByPeerConnection(event.currentTarget);
+                    var url = URL.createObjectURL(event.stream);
+
+                    options.onGetRemoteVideo(clientId, url);
+                };
+                pc.onicecandidate = function (iceCandidate) {
+                    console.log('Получен айс кандидат', iceCandidate);
+                };
+
+                clientList[clientId] = pc;
+            }
+
+            return clientList[clientId];
+        }
+
+        var getClientIdByPeerConnection = function(pc) {
+            for (id in clientList) {
+                if (clientList[id] === pc) {
+                    return id;
+                }
+            }
+
+            return null;
         }
 
         return object;
