@@ -1,8 +1,8 @@
 (function( $ ){
 
     var defaults = {
-        host: 'localhost',
-        port: '1488',
+        host:  location.hostname,
+        port: 1488,
         secure: false,
         iceServers: [
             {url:'stun:stun.l.google.com:19302'},
