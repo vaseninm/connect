@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Тест WebRTC</title>
+	<meta charset="utf-8">
+	<script language="JavaScript" src="bower_components/jquery/dist/jquery.js"></script>
+	<script language="JavaScript" src="server/node_modules/socket.io/node_modules/socket.io-client/dist/socket.io.js"></script>
+	<script language="JavaScript" src="js/webrtc.js"></script>
+	<script language="JavaScript" src="js/client.js"></script>
+
+	<link rel="stylesheet" type="text/css" href="bower_components/reset-css/reset.css" />
+	<link rel="stylesheet" type="text/css" href="css/main.css" />
+</head>
+<body>
+	<div id="content">
+		<h1>Тест WebRTC</h1>
+		<div id="video">
+			<div class="video" id="local">
+				<video autoplay="autoplay" muted="muted"></video>
+			</div>
+			<div class="video">
+				<video autoplay="autoplay"></video>
+			</div>
+			<div class="video">
+				<video autoplay="autoplay"></video>
+			</div>
+			<div class="video">
+				<video autoplay="autoplay"></video>
+			</div>
+			<div class="video">
+				<video autoplay="autoplay"></video>
+			</div>
+			<div class="video">
+				<video autoplay="autoplay"></video>
+			</div>
+			<div class="video">
+				<video autoplay="autoplay"></video>
+			</div>
+			<div class="video">
+				<video autoplay="autoplay"></video>
+			</div>
+			<div class="video">
+				<video autoplay="autoplay"></video>
+			</div>
+		</div>
+	</div>
+
+	<!-- Немного скрытых элементов для копирования -->
+	<div class="video" id="remote" style="display: none;">
+		<video autoplay="autoplay"></video>
+	</div>
+
+</body>
+</html>

@@ -1,0 +1,25 @@
+{
+    "name": "pliv.ru",
+    "version": "0.0.0",
+    "description": "connect",
+    "main": "server.js",
+    "dependencies": {
+        "socket.io": "*",
+        "underscore": "*"
+    },
+    "devDependencies": {},
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "start": "node server.js"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git://github.com/vaseninm/connect.git"
+    },
+    "author": "vaseninm <vasenin@pixelio.ru>",
+    "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/vaseninm/connect/issues"
+    },
+    "homepage": "https://github.com/vaseninm/connect"
+}
