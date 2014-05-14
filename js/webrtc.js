@@ -57,11 +57,13 @@
     $.fn.WebRTC = function(params) {
 
         /* Переменные */
+
+
         var options = $.extend({}, defaults, params);
-        var PeerConnection = window.mozRTCPeerConnection || window.webkitRTCPeerConnection;
+        var PeerConnection = window.mozRTCPeerConnection || window.webkitRTCPeerConnection || window.RTCPeerConnection;
         var IceCandidate = window.mozRTCIceCandidate || window.RTCIceCandidate;
         var SessionDescription = window.mozRTCSessionDescription || window.RTCSessionDescription;
-        navigator.getUserMedia = navigator.getUserMedia || navigator.mozGetUserMedia || navigator.webkitGetUserMedia;
+        navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
 
         var socket = null;
         var localStream = null;
@@ -74,7 +76,7 @@
                 mandatory: {
                     maxWidth: options.maxVideoWidth,
                     maxHeight: options.maxVideoHeight,
-                    minFrameRate: options.minFrameRate
+                    minFrameRate: options.minVideoFrameRate
                 }
             }
         }, function(stream) {
