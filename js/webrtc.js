@@ -44,11 +44,11 @@
             "minWidth": "640",
             "minHeight": "480",
             "minFrameRate": "20",
-            "minAspectRatio": "0.75",
+//            "minAspectRatio": "0.75",
             "maxWidth": "640",
             "maxHeight": "480",
-            "maxFrameRate": "20",
-            "maxAspectRatio": "0.75"
+            "maxFrameRate": "20"
+//            "maxAspectRatio": "0.75"
         },
 
         onGetLocalVideo: function (url) {},
