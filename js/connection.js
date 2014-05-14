@@ -119,7 +119,7 @@ var connection = (function(){
 
   var gotIceCandidate = function(event) {
     if (event.candidate) {
-      console.log('getting ice candidate');
+      console.log('getting ice candidate', event.candidate.candidate);
       //send signal server
       var data = {
         type: 'candidate',

@@ -9,9 +9,10 @@
         <script type="text/javascript" charset="utf-8">
           $(function(){
             var wsEr = !Modernizr.websockets, wrtcEr = !Modernizr.getusermedia || !Modernizr.peerconnection;
+            var ver = 0.01;
             yepnope([{
               test: !wsEr && !wrtcEr,
-              yep: ['js/adapter.js', 'js/bundle.js', 'js/connection.js', 'js/render.js', 'js/main.js'],
+              yep: ['js/adapter.js', 'js/bundle.js?v'+ver, 'js/connection.js'+ver, 'js/render.js'+ver, 'js/main.js'+ver],
               complete: function(){
                 if(wsEr || wrtcEr){
                   if (wsEr){
