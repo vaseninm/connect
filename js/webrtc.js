@@ -40,9 +40,16 @@
                 username: '28224511:1379330808'
             }
         ],
-        maxVideoHeight: 640,
-        maxVideoWidth: 480,
-        minVideoFrameRate: 20,
+        "video": {
+            "minWidth": "640",
+            "minHeight": "480",
+            "minFrameRate": "20",
+            "minAspectRatio": "0.75",
+            "maxWidth": "640",
+            "maxHeight": "480",
+            "maxFrameRate": "20",
+            "maxAspectRatio": "0.75"
+        },
 
         onGetLocalVideo: function (url) {},
         onCall: function (clientId) {},
@@ -73,11 +80,7 @@
         navigator.getUserMedia({
             audio: true,
             video: {
-                mandatory: {
-                    maxWidth: options.maxVideoWidth,
-                    maxHeight: options.maxVideoHeight,
-                    minFrameRate: options.minVideoFrameRate
-                }
+                mandatory: options.video
             }
         }, function(stream) {
             console.log('Получено лоакальное видео');
