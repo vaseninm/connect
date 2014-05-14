@@ -64,15 +64,13 @@
     $.fn.WebRTC = function(params) {
 
         /* Переменные */
-
-
         var options = $.extend({}, defaults, params);
         var PeerConnection = window.mozRTCPeerConnection || window.webkitRTCPeerConnection || window.RTCPeerConnection;
         var IceCandidate = window.mozRTCIceCandidate || window.RTCIceCandidate;
         var SessionDescription = window.mozRTCSessionDescription || window.RTCSessionDescription;
         navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
 
-        var socket = null;
+        var socket = io;
         var localStream = null;
         var clientList = {};
 
@@ -87,53 +85,54 @@
 
             localStream = stream;
 
+            socket = io.connect( ( options.secure ? 'https' : 'http' ) + '://' + options.host + ':' + options.port);
+
+            socket.on('connect', function () {
+                console.log('Подключились к сокет серверу');
+
+                socket.on('sendInfoToNewClient', function(data) {
+                    console.log('Ваш id', data.id);
+                    options.onServerConnect(socket, data.id, data.clients);
+                });
+
+                socket.on('sendInfoAboutNewClient', function(data) {
+                    console.log('Подлючен клиент', data.client.id);
+                });
+
+                socket.on('sendInfoAboutDisconnectedClient', function(data) {
+                    console.log('Отключен клиент', data.client.id);
+                    options.onRemoveRemoteVideo(data.client.id);
+                });
+
+                socket.on('offerFromClient', function (data) {
+                    console.log('Получен', data.type);
+
+                    var pc = getPeerConnection(data.id);
+
+                    pc.setRemoteDescription(new SessionDescription(data.description), function() {
+                        if (data.type === 'offer') {
+                            options.onCall(data.id);
+                        }
+                    }, function(error) {
+                        console.log('Возникла ошибка', error);
+                    });
+                })
+
+                socket.on('iceCandidateFromClient', function (data) {
+                    console.log('Получен ice candidate от пользователя');
+
+                    var pc = getPeerConnection(data.id);
+                    var candidate = new IceCandidate(data.iceCandidate.candidate);
+
+                    pc.addIceCandidate(candidate);
+                })
+            });
+
             options.onGetLocalVideo(URL.createObjectURL(stream));
         }, function(error) {
             console.log('Получили ошибку', error);
         });
 
-        socket = io.connect( ( options.secure ? 'https' : 'http' ) + '://' + options.host + ':' + options.port);
-
-        socket.on('connect', function () {
-            console.log('Подключились к сокет серверу');
-
-            socket.on('sendInfoToNewClient', function(data) {
-                console.log('Ваш id', data.id);
-                options.onServerConnect(socket, data.id, data.clients);
-            });
-
-            socket.on('sendInfoAboutNewClient', function(data) {
-                console.log('Подлючен клиент', data.client.id);
-            });
-
-            socket.on('sendInfoAboutDisconnectedClient', function(data) {
-                console.log('Отключен клиент', data.client.id);
-                options.onRemoveRemoteVideo(data.client.id);
-            });
-
-            socket.on('offerFromClient', function (data) {
-                console.log('Получен', data.type);
-
-                var pc = getPeerConnection(data.id);
-
-                pc.setRemoteDescription(new SessionDescription(data.description), function() {
-                    if (data.type === 'offer') {
-                        options.onCall(data.id);
-                    }
-                }, function(error) {
-                    console.log('Возникла ошибка', error);
-                });
-            })
-
-            socket.on('iceCandidateFromClient', function (data) {
-                console.log('Получен ice candidate от пользователя');
-
-                var pc = getPeerConnection(data.id);
-                var candidate = new IceCandidate(data.iceCandidate.candidate);
-
-                pc.addIceCandidate(candidate);
-            })
-        });
 
         /* Методы */
         var object = {

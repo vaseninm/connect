@@ -5,15 +5,15 @@ $(function(){
     var WebRTC = $.fn.WebRTC({
         onGetLocalVideo: function (url) {
             $('#local video').attr('src', url);
+        },
+        onServerConnect: function(socket, id, clientList) {
+            userId = id;
+            clients = clientList;
             for(i in clients) {
                 if (userId !== clients[i].id) {
                     WebRTC.call(clients[i].id);
                 }
             }
-        },
-        onServerConnect: function(socket, id, clientList) {
-            userId = id;
-            clients = clientList;
         },
         onCall: function(clientId) {
             WebRTC.answer(clientId);

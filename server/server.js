@@ -21,6 +21,7 @@ io.sockets.on('connection', function (socket) {
     });
 
     socket.on('offerToClient', function(data) {
+        console.log(data.id);
         io.sockets.sockets[data.id].emit('offerFromClient', {
             id: socket.id,
             type: data.type,
