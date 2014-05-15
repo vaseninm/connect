@@ -28,7 +28,7 @@ io.sockets.on('connection', function (socket) {
 			client: socket.id
 		});
 
-		_.without(clients, socket.id);
+		clients = _.without(clients, socket.id);
 	});
 
 });

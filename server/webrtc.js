@@ -12,9 +12,7 @@ function WebRTCConnection (socket) {
 	var io = socket.manager;
 
 	socket.on('offerToClient', function (data) {
-		console.log(io.sockets);
-		console.log(data.id);
-		io.sockets[data.id].emit('offerFromClient', {
+		io.sockets.socket(data.id).emit('offerFromClient', {
 			id: socket.id,
 			type: data.type,
 			description: data.description
@@ -22,7 +20,7 @@ function WebRTCConnection (socket) {
 	});
 
 	socket.on('iceCandidateToClient', function (data) {
-		io.sockets[data.id].emit('iceCandidateFromClient', {
+		io.sockets.socket(data.id).emit('iceCandidateFromClient', {
 			id: socket.id,
 			iceCandidate: data.iceCandidate
 		});

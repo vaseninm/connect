@@ -1,9 +1,6 @@
 (function ($) {
 
 	var defaults = {
-		host: location.hostname,
-		port: 1488,
-		secure: false,
 		iceServers: [
 			{url: 'stun:stun.l.google.com:19302'},
 			{url: 'stun:stun1.l.google.com:19302'},
@@ -53,19 +50,15 @@
 
 		onGetLocalVideo: function (url) {
 		},
-		onCall: function (clientId) {
-		},
-		onServerConnect: function (connection, id, clients) {
-		},
 		onGetRemoteVideo: function (clientId, url) {
 		},
-		onRemoveRemoteVideo: function (clientId) {
+		onCall: function (clientId) {
 		},
 		onError: function (code, text) {
 		}
 	};
 
-	$.fn.WebRTC = function (params) {
+	$.fn.WebRTC = function (socket, params) {
 
 		/* Переменные */
 		var options = $.extend({}, defaults, params);
@@ -74,7 +67,6 @@
 		var SessionDescription = window.mozRTCSessionDescription || window.RTCSessionDescription;
 		navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
 
-		var socket = io;
 		var localStream = null;
 		var clientList = {};
 
@@ -89,50 +81,28 @@
 
 			localStream = stream;
 
-			socket = io.connect(( options.secure ? 'https' : 'http' ) + '://' + options.host + ':' + options.port, {
-				'try multiple transports': false
-			});
+			socket.on('offerFromClient', function (data) {
+				console.log('Получен', data.type);
 
-			socket.on('connect', function () {
-				console.log('Подключились к сокет серверу');
+				var pc = getPeerConnection(data.id);
 
-				socket.on('sendInfoToNewClient', function (data) {
-					console.log('Ваш id', data.id);
-					options.onServerConnect(socket, data.id, data.clients);
+				pc.setRemoteDescription(new SessionDescription(data.description), function () {
+					if (data.type === 'offer') {
+						options.onCall(data.id);
+					}
+				}, function (error) {
+					console.log('Возникла ошибка', error);
 				});
+			})
 
-				socket.on('sendInfoAboutConnectedClient', function (data) {
-					console.log('Подлючен клиент', data.client.id);
-				});
+			socket.on('iceCandidateFromClient', function (data) {
+				console.log('Получен ice candidate от пользователя');
 
-				socket.on('sendInfoAboutDisconnectedClient', function (data) {
-					console.log('Отключен клиент', data.client.id);
-					options.onRemoveRemoteVideo(data.client.id);
-				});
+				var pc = getPeerConnection(data.id);
+				var candidate = new IceCandidate(data.iceCandidate.candidate);
 
-				socket.on('offerFromClient', function (data) {
-					console.log('Получен', data.type);
-
-					var pc = getPeerConnection(data.id);
-
-					pc.setRemoteDescription(new SessionDescription(data.description), function () {
-						if (data.type === 'offer') {
-							options.onCall(data.id);
-						}
-					}, function (error) {
-						console.log('Возникла ошибка', error);
-					});
-				})
-
-				socket.on('iceCandidateFromClient', function (data) {
-					console.log('Получен ice candidate от пользователя');
-
-					var pc = getPeerConnection(data.id);
-					var candidate = new IceCandidate(data.iceCandidate.candidate);
-
-					pc.addIceCandidate(candidate);
-				})
-			});
+				pc.addIceCandidate(candidate);
+			})
 
 			options.onGetLocalVideo(URL.createObjectURL(stream));
 		}, function (error) {
@@ -146,6 +116,9 @@
 			},
 			answer: function (clientId) {
 				sendOffer(clientId, 'answer');
+			},
+			disconnect: function(clientId) {
+				delete clientList[clientId];
 			}
 		};
 
