@@ -24,7 +24,7 @@ $(function () {
 			console.log('Отключен клиент', data.client);
 			clients = _.without(clients, data.client);
 			WebRTC.disconnect(data.client);
-			$('.video[user-id="' + data.client + '"]').removeAttr('user-id').find('video').removeAttr('src').first().load();
+			$('.video[user-id="' + data.client + '"]').remove();
 		});
 
 		socket.on('disconnect', function() {
@@ -49,7 +49,9 @@ $(function () {
 				WebRTC.answer(clientId);
 			},
 			onGetRemoteVideo: function (userId, url) {
-				$('.video video:not([src]):first').attr('src', url).parent().attr('user-id', userId);
+				$('#remote').clone().removeAttr('id').appendTo('#video').
+					show().attr('user-id', userId).
+					find('video').attr('src', url);
 			}
 		});
 
