@@ -1,1 +1,0 @@
-var application = angular.module('games', ['ngRoute']);
