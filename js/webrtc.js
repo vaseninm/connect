@@ -119,7 +119,13 @@
 			},
 			disconnect: function(clientId) {
 				delete clientList[clientId];
-			}
+			},
+            play: function() {
+                _.first(localStream.getVideoTracks()).enabled = true;
+            },
+            pause: function() {
+                _.first(localStream.getVideoTracks()).enabled = false;
+            }
 		};
 
 		/* Приватные функции */
