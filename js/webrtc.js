@@ -74,7 +74,24 @@
 		navigator.getUserMedia({
 			audio: true,
 			video: {
-				mandatory: options.video
+				mandatory: {
+					maxWidth: 400,
+					maxHeight: 300
+				},
+				optional: [
+					{
+						minWidth: 120
+					},
+					{
+						minHeight: 90
+					},
+					{
+						maxWidth: 300
+					},
+					{
+						maxHeight: 200
+					}
+				]
 			}
 		}, function (stream) {
 			console.log('Получено локальное видео');
