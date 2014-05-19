@@ -32,12 +32,6 @@ $(function () {
 		});
 
 		var WebRTC = $.fn.WebRTC(socket, {
-			video: {
-				minWidth: 120,
-				minHeight: 90,
-				maxWidth: 400,
-				maxHeight: 300
-			},
 			onGetLocalVideo: function (url) {
 				$('#local video').attr('src', url);
 
