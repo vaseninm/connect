@@ -4,7 +4,7 @@ var io = require('socket.io').listen(1488, {
 	'transports': ['websocket'],
 	'browser client': false
 });
-var webRTC = require('./webrtc');
+var webRTC = require('webrtcio');
 
 var clients = [];
 
