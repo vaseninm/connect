@@ -45,9 +45,9 @@ var connection = (function(){
     audio: true,
     video: {
       mandatory: {
-       maxWidth: 320,
-       maxHeight: 240,
-       minFrameRate: 20
+        maxWidth: 320,
+        maxHeight: 240,
+        minFrameRate: 20
       },
       optional: []
     }
@@ -57,17 +57,12 @@ var connection = (function(){
     console.log(error);
   }
 
-  var messageHandler = function (message) {
-      try {
-          var m = JSON.parse(message.data);
-          console.log('message: ', m);
-          var data = m.data;
-          var from = m.from;
+  var messageHandler = function (msg) {
+      console.log('message: ', msg);
+      var message = JSON.parse(msg);
 
-      } catch (e) {
-          console.log('This doesn\'t look like a valid JSON: ', message.data);
-          return;
-      }
+      var data = message.data;
+      var from = message.from;
 
       if (data.type === 'offer' || data.type === 'answer' || data.type === 'candidate'){
         var client = clients.findOne({key:from});
@@ -114,7 +109,7 @@ var connection = (function(){
     } else {
       console.log('send answer to'+this);
     }
-    ws.send(JSON.stringify({to:this, data:description}));
+    ws.emit('message', {to:this, data:description});
   }
 
   var gotIceCandidate = function(event) {
@@ -127,14 +122,13 @@ var connection = (function(){
         id: event.candidate.sdpMid,
         candidate: event.candidate.candidate
       };
-      ws.send(JSON.stringify({to:this, data:data}));
+      ws.emit('message',{to:this, data:data});
     }
   }
 
   var gotRemoteStream = function(remoteStream){
 
     var keys = clients.list({attribute:{pc:remoteStream.currentTarget}});
-    var client = clients.findOne({key:keys[0]});
     connection.publish('got remote stream', remoteStream.stream, keys[0]);
   };
 
@@ -151,14 +145,13 @@ var connection = (function(){
     return pc;
   }
  
-  var wsInit = function(){
-    ws = new WebSocket('ws://' + location.hostname + ':8080');
-    ws.onopen = function () {
+  var ioInit = function(){
+    ws = io.connect('http://localhost:8080');
+    ws.on('connect', function () {
         connection.publish('websocket open');
         console.log('socket open');
-    }
-    ws.onerror = errorHandler;
-    ws.onmessage = messageHandler;
+    });
+    ws.on('message', messageHandler);
   }
 
   return {
@@ -166,7 +159,7 @@ var connection = (function(){
       console.log('[module connection] init');
       getUserMedia(constraints, function(stream) {
             console.log('video ok');
-            wsInit();
+            ioInit();
             localStream = stream;
             connection.publish('local stream', stream);
       }, errorHandler);

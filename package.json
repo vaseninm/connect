@@ -1,6 +1,6 @@
 {
   "dependencies": {
-    "websocket": "^1.0.8",
+    "socket.io": "^0.9.16",
     "winston": "^0.7.3"
   }
 }

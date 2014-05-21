@@ -12,7 +12,7 @@
             var ver = 0.01;
             yepnope([{
               test: !wsEr && !wrtcEr,
-              yep: ['js/adapter.js', 'js/bundle.js?v'+ver, 'js/connection.js?v'+ver, 'js/render.js?v'+ver, 'js/main.js?v'+ver],
+              yep: ['js/adapter.js', 'js/socket.io.js', 'js/bundle.js?v'+ver, 'js/connection.js?v'+ver, 'js/render.js?v'+ver, 'js/main.js?v'+ver],
               complete: function(){
                 if(wsEr || wrtcEr){
                   if (wsEr){
